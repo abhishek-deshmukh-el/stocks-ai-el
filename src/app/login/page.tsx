@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
       toast({
         title: "Name Required",
@@ -111,11 +111,7 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full text-base h-11" 
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full text-base h-11" disabled={isLoading}>
               {isLoading ? "Logging in..." : "Continue to Dashboard"}
             </Button>
 

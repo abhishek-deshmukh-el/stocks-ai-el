@@ -13,7 +13,7 @@ export interface UserInfo {
  */
 export function isAuthenticated(): boolean {
   if (typeof window === "undefined") return false;
-  
+
   const user = localStorage.getItem("user");
   return !!user;
 }
@@ -23,10 +23,10 @@ export function isAuthenticated(): boolean {
  */
 export function getCurrentUser(): UserInfo | null {
   if (typeof window === "undefined") return null;
-  
+
   const user = localStorage.getItem("user");
   if (!user) return null;
-  
+
   try {
     return JSON.parse(user);
   } catch {
@@ -39,6 +39,6 @@ export function getCurrentUser(): UserInfo | null {
  */
 export function logout(): void {
   if (typeof window === "undefined") return;
-  
+
   localStorage.removeItem("user");
 }

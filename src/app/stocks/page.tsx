@@ -24,7 +24,7 @@ export default function StockAnalyzer() {
       router.push("/login");
       return;
     }
-    
+
     const user = getCurrentUser();
     if (user) {
       setUserName(user.name);
@@ -49,7 +49,8 @@ export default function StockAnalyzer() {
     // In production, this would save to a database
     toast({
       title: "Subscribed! 💬",
-      description: "You'll receive WhatsApp alerts for all stocks in the watchlist via hourly batch jobs",
+      description:
+        "You'll receive WhatsApp alerts for all stocks in the watchlist via hourly batch jobs",
     });
 
     console.log("📱 Subscription saved (demo mode):");
@@ -68,11 +69,7 @@ export default function StockAnalyzer() {
             </p>
           </div>
           <div className="flex gap-2 items-center">
-            {userName && (
-              <span className="text-sm text-muted-foreground">
-                Welcome, {userName}
-              </span>
-            )}
+            {userName && <span className="text-sm text-muted-foreground">Welcome, {userName}</span>}
             <Button asChild variant="outline">
               <Link href="/dashboard">Dashboard</Link>
             </Button>
@@ -86,9 +83,7 @@ export default function StockAnalyzer() {
           <Card>
             <CardHeader>
               <CardTitle>📊 How It Works</CardTitle>
-              <CardDescription>
-                Fully automated stock monitoring
-              </CardDescription>
+              <CardDescription>Fully automated stock monitoring</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
@@ -101,7 +96,7 @@ export default function StockAnalyzer() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start gap-3">
                   <Badge className="mt-1">2</Badge>
                   <div>
@@ -111,7 +106,7 @@ export default function StockAnalyzer() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start gap-3">
                   <Badge className="mt-1">3</Badge>
                   <div>
@@ -137,9 +132,7 @@ export default function StockAnalyzer() {
           <Card>
             <CardHeader>
               <CardTitle>🔔 Subscribe to Alerts</CardTitle>
-              <CardDescription>
-                Get WhatsApp notifications for volatility alerts
-              </CardDescription>
+              <CardDescription>Get WhatsApp notifications for volatility alerts</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -152,7 +145,8 @@ export default function StockAnalyzer() {
                   onChange={(e) => setPhoneNumber(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Receive alerts for all {US_STOCKS.length + INDIA_STOCKS.length} monitored stocks (US & India)
+                  Receive alerts for all {US_STOCKS.length + INDIA_STOCKS.length} monitored stocks
+                  (US & India)
                 </p>
               </div>
 
@@ -177,7 +171,8 @@ export default function StockAnalyzer() {
           <CardHeader>
             <CardTitle>📈 Monitored Stocks</CardTitle>
             <CardDescription>
-              {US_STOCKS.length + INDIA_STOCKS.length} stocks ({US_STOCKS.length} US + {INDIA_STOCKS.length} India) monitored every hour
+              {US_STOCKS.length + INDIA_STOCKS.length} stocks ({US_STOCKS.length} US +{" "}
+              {INDIA_STOCKS.length} India) monitored every hour
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -192,20 +187,16 @@ export default function StockAnalyzer() {
                     className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <div className="font-bold text-lg">{stock.symbol}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {stock.name}
-                    </div>
+                    <div className="text-xs text-muted-foreground truncate">{stock.name}</div>
                     <div className="text-sm mt-2">
                       <div className="text-xs text-muted-foreground">Target</div>
-                      <div className="font-medium">
-                        ${stock.targetPrice?.toFixed(2)}
-                      </div>
+                      <div className="font-medium">${stock.targetPrice?.toFixed(2)}</div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            
+
             <div className="mb-6">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <span>🇮🇳</span> India Stocks ({INDIA_STOCKS.length})
@@ -216,15 +207,11 @@ export default function StockAnalyzer() {
                     key={stock.symbol}
                     className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <div className="font-bold text-lg">{stock.symbol.replace('.NS', '')}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {stock.name}
-                    </div>
+                    <div className="font-bold text-lg">{stock.symbol.replace(".NS", "")}</div>
+                    <div className="text-xs text-muted-foreground truncate">{stock.name}</div>
                     <div className="text-sm mt-2">
                       <div className="text-xs text-muted-foreground">Target</div>
-                      <div className="font-medium">
-                        ₹{stock.targetPrice?.toFixed(2)}
-                      </div>
+                      <div className="font-medium">₹{stock.targetPrice?.toFixed(2)}</div>
                     </div>
                   </div>
                 ))}
@@ -237,9 +224,7 @@ export default function StockAnalyzer() {
                 Add, edit, or remove stocks from your monitoring list
               </p>
               <Button asChild variant="secondary">
-                <Link href="/watchlist">
-                  Manage Watchlist
-                </Link>
+                <Link href="/watchlist">Manage Watchlist</Link>
               </Button>
             </div>
           </CardContent>

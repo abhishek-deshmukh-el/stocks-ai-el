@@ -16,43 +16,46 @@ interface WhatsAppOptions {
 export async function sendWhatsApp(options: WhatsAppOptions): Promise<boolean> {
   try {
     // This function should only run server-side
-    if (typeof window !== 'undefined') {
-      console.error('sendWhatsApp should only be called server-side');
+    if (typeof window !== "undefined") {
+      console.error("sendWhatsApp should only be called server-side");
       return false;
     }
 
-    const accountSid = process.env.TWILIO_ACCOUNT_SID
-    const authToken = process.env.TWILIO_AUTH_TOKEN 
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
     // Format phone number with whatsapp: prefix - hardcoded recipient
-    const formattedTo = 'whatsapp:+918007916705';
+    const formattedTo = "whatsapp:+918007916705";
 
     try {
-      const twilio = require('twilio');
+      const { default: twilio } = await import("twilio");
       const client = twilio(accountSid, authToken);
 
-      console.log('💬 Sending WhatsApp message via Twilio...');
-      
+      console.log("💬 Sending WhatsApp message via Twilio...");
+
       const messageConfig = {
         body: options.message,
-        from: 'whatsapp:+14155238886',
+        from: "whatsapp:+14155238886",
         to: formattedTo,
       };
-      
+
       // const message = await client.messages.create(messageConfig);
-      
+
       // console.log('✅ WhatsApp message sent! SID:', message.sid);
       return true;
     } catch (twilioError: any) {
       // Check if it's a Twilio authentication error
-      if (twilioError.status === 401 || twilioError.message?.includes('Authenticate')) {
-        console.error('❌ Twilio Authentication Failed - Check your credentials');
-        console.error('Account SID:', accountSid);
-        console.error('Auth Token:', authToken ? 'Present (length: ' + authToken.length + ')' : 'Missing');
+      if (twilioError.status === 401 || twilioError.message?.includes("Authenticate")) {
+        console.error("❌ Twilio Authentication Failed - Check your credentials");
+        console.error("Account SID:", accountSid);
+        console.error(
+          "Auth Token:",
+          authToken ? "Present (length: " + authToken.length + ")" : "Missing"
+        );
       }
       throw twilioError;
     }
   } catch (error) {
-    console.error('❌ WhatsApp sending failed:', error);
+    console.error("❌ WhatsApp sending failed:", error);
     return false;
   }
 }
@@ -70,7 +73,7 @@ export async function sendStockAlertWhatsApp(
   recommendation: string
 ): Promise<boolean> {
   const currency = getCurrencySymbol(stockSymbol);
-  
+
   const message = `
 🔔 *${stockSymbol} Volatility Alert*
 
@@ -83,11 +86,11 @@ export async function sendStockAlertWhatsApp(
 💡 *Recommendation:* ${recommendation}
 
 ${
-  recommendation === 'BUY'
-    ? '✅ *Low volatility* - Tight stop, stable stock'
-    : recommendation === 'SELL'
-    ? '⚠️ *High volatility* - Wide stop, risky position'
-    : '⚡ *Moderate volatility* - Standard risk level'
+  recommendation === "BUY"
+    ? "✅ *Low volatility* - Tight stop, stable stock"
+    : recommendation === "SELL"
+      ? "⚠️ *High volatility* - Wide stop, risky position"
+      : "⚡ *Moderate volatility* - Standard risk level"
 }
 
 *Action:* Place your stop loss at ${currency}${stopLoss.toFixed(2)}
@@ -106,8 +109,8 @@ ${
  */
 export function validatePhoneNumber(phone: string): boolean {
   // Remove all non-digit characters
-  const digits = phone.replace(/\D/g, '');
-  
+  const digits = phone.replace(/\D/g, "");
+
   // Check if it's a valid length (10-15 digits)
   return digits.length >= 10 && digits.length <= 15;
 }
@@ -116,27 +119,27 @@ export function validatePhoneNumber(phone: string): boolean {
  * Format phone number to E.164 format
  */
 export function formatPhoneNumber(phone: string): string {
-  const digits = phone.replace(/\D/g, '');
-  
+  const digits = phone.replace(/\D/g, "");
+
   // Indian numbers (10 digits) - add +91
-  if (digits.length === 10 && !digits.startsWith('1')) {
+  if (digits.length === 10 && !digits.startsWith("1")) {
     return `+91${digits}`;
   }
-  
+
   // US numbers (10 digits starting with area code)
   if (digits.length === 10) {
     return `+1${digits}`;
   }
-  
+
   // If already has country code
-  if (digits.startsWith('91') && digits.length === 12) {
+  if (digits.startsWith("91") && digits.length === 12) {
     return `+${digits}`;
   }
-  
-  if (digits.startsWith('1') && digits.length === 11) {
+
+  if (digits.startsWith("1") && digits.length === 11) {
     return `+${digits}`;
   }
-  
+
   // Otherwise, add + if not present
-  return digits.startsWith('+') ? digits : `+${digits}`;
+  return digits.startsWith("+") ? digits : `+${digits}`;
 }

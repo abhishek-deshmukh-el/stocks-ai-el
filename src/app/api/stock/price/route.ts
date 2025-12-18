@@ -7,10 +7,7 @@ export async function GET(request: NextRequest) {
     const symbol = searchParams.get("symbol");
 
     if (!symbol) {
-      return NextResponse.json(
-        { success: false, error: "Symbol is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Symbol is required" }, { status: 400 });
     }
 
     const price = await fetchCurrentPrice(symbol);

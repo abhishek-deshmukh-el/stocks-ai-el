@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { STOCK_WATCHLIST, formatPrice, type WatchlistStock } from "@/lib/constants";
@@ -13,8 +20,8 @@ import { isAuthenticated, getCurrentUser, logout } from "@/lib/auth";
 import Link from "next/link";
 import { ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
 
-type SortField = 'symbol' | 'name' | 'targetPrice' | 'atrPeriod' | 'atrMultiplier';
-type SortDirection = 'asc' | 'desc' | null;
+type SortField = "symbol" | "name" | "targetPrice" | "atrPeriod" | "atrMultiplier";
+type SortDirection = "asc" | "desc" | null;
 
 export default function BatchJobPage() {
   const router = useRouter();
@@ -38,20 +45,20 @@ export default function BatchJobPage() {
     if (user) {
       setUserName(user.name);
     }
-    
+
     // Fetch market status from API
     const updateMarketStatus = async () => {
       try {
-        const response = await fetch('/api/market/status');
+        const response = await fetch("/api/market/status");
         const data = await response.json();
         if (data.success) {
           setMarketStatus(data.markets);
         }
       } catch (error) {
-        console.error('Failed to fetch market status:', error);
+        console.error("Failed to fetch market status:", error);
       }
     };
-    
+
     updateMarketStatus();
     // Refresh market status every minute
     const interval = setInterval(updateMarketStatus, 60000);
@@ -66,15 +73,15 @@ export default function BatchJobPage() {
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       // Cycle through: asc -> desc -> null
-      if (sortDirection === 'asc') {
-        setSortDirection('desc');
-      } else if (sortDirection === 'desc') {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else if (sortDirection === "desc") {
         setSortDirection(null);
         setSortField(null);
       }
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
@@ -82,10 +89,10 @@ export default function BatchJobPage() {
     if (sortField !== field) {
       return <ArrowUpDown className="w-4 h-4 ml-1 inline" />;
     }
-    if (sortDirection === 'asc') {
+    if (sortDirection === "asc") {
       return <ArrowUp className="w-4 h-4 ml-1 inline" />;
     }
-    if (sortDirection === 'desc') {
+    if (sortDirection === "desc") {
       return <ArrowDown className="w-4 h-4 ml-1 inline" />;
     }
     return <ArrowUpDown className="w-4 h-4 ml-1 inline" />;
@@ -99,8 +106,7 @@ export default function BatchJobPage() {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (stock) =>
-          stock.symbol.toLowerCase().includes(query) ||
-          stock.name.toLowerCase().includes(query)
+          stock.symbol.toLowerCase().includes(query) || stock.name.toLowerCase().includes(query)
       );
     }
 
@@ -115,14 +121,14 @@ export default function BatchJobPage() {
         if (bValue === undefined) bValue = 0;
 
         // String comparison
-        if (typeof aValue === 'string') {
-          return sortDirection === 'asc'
+        if (typeof aValue === "string") {
+          return sortDirection === "asc"
             ? aValue.localeCompare(bValue)
             : bValue.localeCompare(aValue);
         }
 
         // Number comparison
-        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+        return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
       });
     }
 
@@ -203,28 +209,42 @@ export default function BatchJobPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">🇺🇸 US (NYSE/NASDAQ)</span>
-                  <Badge variant={marketStatus?.us?.isOpen ? "default" : "secondary"} className="text-sm px-3 py-1">
+                  <Badge
+                    variant={marketStatus?.us?.isOpen ? "default" : "secondary"}
+                    className="text-sm px-3 py-1"
+                  >
                     {marketStatus?.us?.isOpen ? "🟢 Open" : "🔴 Closed"}
                   </Badge>
                 </div>
                 {marketStatus?.us?.holiday && (
-                  <p className="text-xs text-muted-foreground ml-6">Holiday: {marketStatus.us.holiday}</p>
+                  <p className="text-xs text-muted-foreground ml-6">
+                    Holiday: {marketStatus.us.holiday}
+                  </p>
                 )}
                 {marketStatus?.us?.session && marketStatus?.us?.isOpen && (
-                  <p className="text-xs text-muted-foreground ml-6">Session: {marketStatus.us.session}</p>
+                  <p className="text-xs text-muted-foreground ml-6">
+                    Session: {marketStatus.us.session}
+                  </p>
                 )}
-                
+
                 <div className="flex items-center justify-between pt-2 border-t">
                   <span className="text-sm font-medium">🇮🇳 India (NSE/BSE)</span>
-                  <Badge variant={marketStatus?.india?.isOpen ? "default" : "secondary"} className="text-sm px-3 py-1">
+                  <Badge
+                    variant={marketStatus?.india?.isOpen ? "default" : "secondary"}
+                    className="text-sm px-3 py-1"
+                  >
                     {marketStatus?.india?.isOpen ? "🟢 Open" : "🔴 Closed"}
                   </Badge>
                 </div>
                 {marketStatus?.india?.holiday && (
-                  <p className="text-xs text-muted-foreground ml-6">Holiday: {marketStatus.india.holiday}</p>
+                  <p className="text-xs text-muted-foreground ml-6">
+                    Holiday: {marketStatus.india.holiday}
+                  </p>
                 )}
                 {marketStatus?.india?.session && marketStatus?.india?.isOpen && (
-                  <p className="text-xs text-muted-foreground ml-6">Session: {marketStatus.india.session}</p>
+                  <p className="text-xs text-muted-foreground ml-6">
+                    Session: {marketStatus.india.session}
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -237,9 +257,7 @@ export default function BatchJobPage() {
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold">{STOCK_WATCHLIST.length}</div>
-              <p className="text-sm text-muted-foreground mt-2">
-                Active stocks
-              </p>
+              <p className="text-sm text-muted-foreground mt-2">Active stocks</p>
             </CardContent>
           </Card>
 
@@ -254,19 +272,12 @@ export default function BatchJobPage() {
                   {isRunning ? "Running..." : "Idle"}
                 </Badge>
                 {lastRun && (
-                  <p className="text-xs text-muted-foreground mt-3">
-                    Last run: {lastRun}
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-3">Last run: {lastRun}</p>
                 )}
               </div>
-              
+
               <div className="pt-2 border-t">
-                <Button 
-                  onClick={runBatchJob} 
-                  disabled={isRunning}
-                  size="lg"
-                  className="w-full"
-                >
+                <Button onClick={runBatchJob} disabled={isRunning} size="lg" className="w-full">
                   {isRunning ? "Processing..." : "Run Batch Job Now"}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
@@ -304,7 +315,9 @@ export default function BatchJobPage() {
                   <h4 className="font-semibold mb-2">Errors:</h4>
                   <ul className="text-sm space-y-1">
                     {results.errors.map((error: string, index: number) => (
-                      <li key={index} className="text-red-600 dark:text-red-400">• {error}</li>
+                      <li key={index} className="text-red-600 dark:text-red-400">
+                        • {error}
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -317,7 +330,8 @@ export default function BatchJobPage() {
           <CardHeader>
             <CardTitle>Stock Watchlist</CardTitle>
             <CardDescription>
-              Stocks being monitored for volatility stops ({filteredAndSortedStocks.length} of {STOCK_WATCHLIST.length})
+              Stocks being monitored for volatility stops ({filteredAndSortedStocks.length} of{" "}
+              {STOCK_WATCHLIST.length})
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -336,35 +350,35 @@ export default function BatchJobPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead 
+                    <TableHead
                       className="cursor-pointer hover:bg-muted"
-                      onClick={() => handleSort('symbol')}
+                      onClick={() => handleSort("symbol")}
                     >
-                      Symbol {getSortIcon('symbol')}
+                      Symbol {getSortIcon("symbol")}
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="cursor-pointer hover:bg-muted"
-                      onClick={() => handleSort('name')}
+                      onClick={() => handleSort("name")}
                     >
-                      Name {getSortIcon('name')}
+                      Name {getSortIcon("name")}
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="text-right cursor-pointer hover:bg-muted"
-                      onClick={() => handleSort('targetPrice')}
+                      onClick={() => handleSort("targetPrice")}
                     >
-                      Target Price {getSortIcon('targetPrice')}
+                      Target Price {getSortIcon("targetPrice")}
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="text-right cursor-pointer hover:bg-muted"
-                      onClick={() => handleSort('atrPeriod')}
+                      onClick={() => handleSort("atrPeriod")}
                     >
-                      ATR Period {getSortIcon('atrPeriod')}
+                      ATR Period {getSortIcon("atrPeriod")}
                     </TableHead>
-                    <TableHead 
+                    <TableHead
                       className="text-right cursor-pointer hover:bg-muted"
-                      onClick={() => handleSort('atrMultiplier')}
+                      onClick={() => handleSort("atrMultiplier")}
                     >
-                      Multiplier {getSortIcon('atrMultiplier')}
+                      Multiplier {getSortIcon("atrMultiplier")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -383,12 +397,8 @@ export default function BatchJobPage() {
                         <TableCell className="text-right">
                           {stock.targetPrice ? formatPrice(stock.targetPrice, stock.symbol) : "—"}
                         </TableCell>
-                        <TableCell className="text-right">
-                          {stock.atrPeriod || 14}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {stock.atrMultiplier || 2.0}x
-                        </TableCell>
+                        <TableCell className="text-right">{stock.atrPeriod || 14}</TableCell>
+                        <TableCell className="text-right">{stock.atrMultiplier || 2.0}x</TableCell>
                       </TableRow>
                     ))
                   )}

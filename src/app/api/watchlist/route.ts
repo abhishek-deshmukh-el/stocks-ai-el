@@ -4,7 +4,7 @@ import { STOCK_WATCHLIST } from "@/lib/constants";
 /**
  * API Route: Get Stock Watchlist
  * GET /api/watchlist
- * 
+ *
  * Returns the current stock watchlist
  */
 export async function GET() {
@@ -22,7 +22,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     // For now, just return the received data
     // In production, you'd save this to a database
     return NextResponse.json({
@@ -49,14 +49,11 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const { symbol, ...updates } = body;
-    
+
     if (!symbol) {
-      return NextResponse.json(
-        { success: false, error: "Symbol is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Symbol is required" }, { status: 400 });
     }
-    
+
     // In production, you'd update this in a database
     return NextResponse.json({
       success: true,
@@ -82,14 +79,11 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const symbol = searchParams.get("symbol");
-    
+
     if (!symbol) {
-      return NextResponse.json(
-        { success: false, error: "Symbol is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "Symbol is required" }, { status: 400 });
     }
-    
+
     // In production, you'd delete this from a database
     return NextResponse.json({
       success: true,

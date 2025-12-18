@@ -155,9 +155,7 @@ export default function Home() {
             <h1 className="text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
               Stock Monitoring Dashboard
             </h1>
-            <p className="text-muted-foreground">
-              Welcome back, {userName}!
-            </p>
+            <p className="text-muted-foreground">Welcome back, {userName}!</p>
           </div>
           <Button onClick={handleLogout} variant="destructive">
             Logout
@@ -169,18 +167,14 @@ export default function Home() {
           <Card>
             <CardHeader>
               <CardTitle>🤖 Batch Monitor</CardTitle>
-              <CardDescription>
-                View automated monitoring status
-              </CardDescription>
+              <CardDescription>View automated monitoring status</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
                 Check hourly batch job status, view results, and manually trigger jobs
               </p>
               <Button asChild className="w-full">
-                <Link href="/batch">
-                  Open Batch Monitor
-                </Link>
+                <Link href="/batch">Open Batch Monitor</Link>
               </Button>
             </CardContent>
           </Card>
@@ -188,18 +182,14 @@ export default function Home() {
           <Card>
             <CardHeader>
               <CardTitle>📝 Manage Watchlist</CardTitle>
-              <CardDescription>
-                Add, edit, or remove stocks
-              </CardDescription>
+              <CardDescription>Add, edit, or remove stocks</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
                 Customize your stock watchlist with regional organization
               </p>
               <Button asChild className="w-full" variant="secondary">
-                <Link href="/watchlist">
-                  Manage Watchlist
-                </Link>
+                <Link href="/watchlist">Manage Watchlist</Link>
               </Button>
             </CardContent>
           </Card>
@@ -207,18 +197,14 @@ export default function Home() {
           <Card>
             <CardHeader>
               <CardTitle>📈 View Stocks</CardTitle>
-              <CardDescription>
-                Browse monitored stocks
-              </CardDescription>
+              <CardDescription>Browse monitored stocks</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
                 View all stocks being monitored and subscribe to alerts
               </p>
               <Button asChild className="w-full" variant="outline">
-                <Link href="/stocks">
-                  View Stock List
-                </Link>
+                <Link href="/stocks">View Stock List</Link>
               </Button>
             </CardContent>
           </Card>

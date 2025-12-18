@@ -25,7 +25,7 @@ export default function Home() {
     if (user) {
       setUserName(user.name);
     }
-    
+
     setIsLoading(false);
   }, [router]);
 
@@ -68,19 +68,13 @@ export default function Home() {
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
               <Button asChild size="lg">
-                <Link href="/batch">
-                  View Dashboard
-                </Link>
+                <Link href="/batch">View Dashboard</Link>
               </Button>
               <Button asChild variant="secondary" size="lg">
-                <Link href="/watchlist">
-                  Manage Watchlist
-                </Link>
+                <Link href="/watchlist">Manage Watchlist</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href="/stocks">
-                  Subscribe to Alerts
-                </Link>
+                <Link href="/stocks">Subscribe to Alerts</Link>
               </Button>
             </div>
           </div>
@@ -89,18 +83,15 @@ export default function Home() {
             <Card>
               <CardHeader>
                 <CardTitle>🤖 Fully Automated</CardTitle>
-                <CardDescription>
-                  No manual input required
-                </CardDescription>
+                <CardDescription>No manual input required</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  System automatically fetches stock prices via API every hour and calculates volatility stops using ATR.
+                  System automatically fetches stock prices via API every hour and calculates
+                  volatility stops using ATR.
                 </p>
                 <Button asChild className="w-full">
-                  <Link href="/batch">
-                    View Dashboard
-                  </Link>
+                  <Link href="/batch">View Dashboard</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -115,16 +106,14 @@ export default function Home() {
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
                   <span className="block mb-2">
-                    <strong>US:</strong> {US_STOCKS.map(s => s.symbol).join(', ')}
+                    <strong>US:</strong> {US_STOCKS.map((s) => s.symbol).join(", ")}
                   </span>
                   <span className="block">
-                    <strong>India:</strong> {INDIA_STOCKS.map(s => s.symbol).join(', ')}
+                    <strong>India:</strong> {INDIA_STOCKS.map((s) => s.symbol).join(", ")}
                   </span>
                 </p>
                 <Button asChild className="w-full" variant="secondary">
-                  <Link href="/watchlist">
-                    Manage Watchlist
-                  </Link>
+                  <Link href="/watchlist">Manage Watchlist</Link>
                 </Button>
               </CardContent>
             </Card>

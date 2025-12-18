@@ -15,13 +15,13 @@ interface SMSOptions {
 export async function sendSMS(options: SMSOptions): Promise<boolean> {
   try {
     // Mock SMS sending for development
-    console.log('📱 SMS Notification (Development Mode)');
-    console.log('To:', options.to);
-    console.log('Message:', options.message);
-    
+    console.log("📱 SMS Notification (Development Mode)");
+    console.log("To:", options.to);
+    console.log("Message:", options.message);
+
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     // In production, use a service like Twilio:
     /*
     const client = twilio(
@@ -35,10 +35,10 @@ export async function sendSMS(options: SMSOptions): Promise<boolean> {
       to: options.to,
     });
     */
-    
+
     return true;
   } catch (error) {
-    console.error('SMS sending failed:', error);
+    console.error("SMS sending failed:", error);
     return false;
   }
 }
@@ -64,11 +64,11 @@ Risk: $${(currentPrice - stopLoss).toFixed(2)}/share
 Recommendation: ${recommendation}
 
 ${
-  recommendation === 'BUY'
-    ? '✅ Low volatility - Stable stock'
-    : recommendation === 'SELL'
-    ? '⚠️ High volatility - Risky position'
-    : '⚡ Moderate volatility'
+  recommendation === "BUY"
+    ? "✅ Low volatility - Stable stock"
+    : recommendation === "SELL"
+      ? "⚠️ High volatility - Risky position"
+      : "⚡ Moderate volatility"
 }
 
 Not financial advice. Trade responsibly.
@@ -85,8 +85,8 @@ Not financial advice. Trade responsibly.
  */
 export function validatePhoneNumber(phone: string): boolean {
   // Remove all non-digit characters
-  const digits = phone.replace(/\D/g, '');
-  
+  const digits = phone.replace(/\D/g, "");
+
   // Check if it's a valid length (10-15 digits)
   return digits.length >= 10 && digits.length <= 15;
 }
@@ -95,18 +95,18 @@ export function validatePhoneNumber(phone: string): boolean {
  * Format phone number to E.164 format
  */
 export function formatPhoneNumber(phone: string): string {
-  const digits = phone.replace(/\D/g, '');
-  
+  const digits = phone.replace(/\D/g, "");
+
   // If no country code, assume US (+1)
   if (digits.length === 10) {
     return `+1${digits}`;
   }
-  
+
   // If already has country code
-  if (digits.startsWith('1') && digits.length === 11) {
+  if (digits.startsWith("1") && digits.length === 11) {
     return `+${digits}`;
   }
-  
+
   // Otherwise, add + if not present
-  return digits.startsWith('+') ? digits : `+${digits}`;
+  return digits.startsWith("+") ? digits : `+${digits}`;
 }

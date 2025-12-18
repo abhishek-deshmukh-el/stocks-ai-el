@@ -71,16 +71,10 @@ async function processStock(stock: WatchlistStock): Promise<StockAlert | null> {
     const currentPrice = await fetchCurrentPrice(stock.symbol);
 
     // Fetch historical data
-    const historicalData = await fetchHistoricalData(
-      stock.symbol,
-      BATCH_CONFIG.HISTORICAL_DAYS
-    );
+    const historicalData = await fetchHistoricalData(stock.symbol, BATCH_CONFIG.HISTORICAL_DAYS);
 
     // Calculate volatility stop
-    const atr = calculateATR(
-      historicalData,
-      stock.atrPeriod || BATCH_CONFIG.DEFAULT_ATR_PERIOD
-    );
+    const atr = calculateATR(historicalData, stock.atrPeriod || BATCH_CONFIG.DEFAULT_ATR_PERIOD);
 
     const volatilityStop = calculateVolatilityStop(
       currentPrice,
@@ -108,7 +102,9 @@ async function processStock(stock: WatchlistStock): Promise<StockAlert | null> {
       };
     }
 
-    console.log(`✅ ${stock.symbol}: No alert needed (Price: $${currentPrice.toFixed(2)}, Stop: $${volatilityStop.stopLoss})`);
+    console.log(
+      `✅ ${stock.symbol}: No alert needed (Price: $${currentPrice.toFixed(2)}, Stop: $${volatilityStop.stopLoss})`
+    );
     return null;
   } catch (error) {
     console.error(`❌ Error processing ${stock.symbol}:`, error);
@@ -128,13 +124,13 @@ function generateAlertMessage(
   switch (condition) {
     case AlertCondition.STOP_TRIGGERED:
       return `🚨 STOP LOSS TRIGGERED for ${stock.symbol}! Price ($${currentPrice.toFixed(2)}) hit stop at $${volatilityStop.stopLoss}`;
-    
+
     case AlertCondition.APPROACHING_STOP:
       return `⚠️ ${stock.symbol} approaching stop loss! Price: $${currentPrice.toFixed(2)}, Stop: $${volatilityStop.stopLoss}`;
-    
+
     case AlertCondition.HIGH_VOLATILITY:
       return `📊 High volatility detected for ${stock.symbol}! Stop is ${volatilityStop.stopLossPercentage}% away at $${volatilityStop.stopLoss}`;
-    
+
     default:
       return `📈 Alert for ${stock.symbol}: Current $${currentPrice.toFixed(2)}, Stop $${volatilityStop.stopLoss}`;
   }
@@ -145,7 +141,7 @@ function generateAlertMessage(
  */
 async function sendAlerts(alert: StockAlert): Promise<boolean> {
   const { stock, currentPrice, volatilityStop } = alert;
-  
+
   // Use admin WhatsApp if stock-specific contact not provided
   const phone = stock.notifyPhone || process.env.ADMIN_PHONE;
 
@@ -189,13 +185,13 @@ export async function runBatchJob(isManual = false): Promise<BatchJobStatus> {
   };
 
   console.log("\n🚀 Starting batch job...");
-  
+
   // Check if market is open (skip check for manual runs)
   if (!isManual && !(await isMarketOpen())) {
     console.log(`⏸️  Batch job skipped: US Market is closed`);
-    
+
     status.isRunning = false;
-    status.errors.push('Market is currently closed');
+    status.errors.push("Market is currently closed");
     return status;
   }
 
@@ -267,16 +263,16 @@ export async function runBatchJob(isManual = false): Promise<BatchJobStatus> {
 /**
  * Send batch job summary via WhatsApp
  */
-async function sendBatchSummary(
-  status: BatchJobStatus,
-  alerts: StockAlert[]
-): Promise<void> {
+async function sendBatchSummary(status: BatchJobStatus, alerts: StockAlert[]): Promise<void> {
   const phone = process.env.ADMIN_PHONE;
   if (!phone) return;
 
-  const alertsList = alerts.map((alert) => 
-    `• ${alert.stock.symbol}: $${alert.currentPrice.toFixed(2)} → Stop: $${alert.volatilityStop.stopLoss}`
-  ).join('\n');
+  const alertsList = alerts
+    .map(
+      (alert) =>
+        `• ${alert.stock.symbol}: $${alert.currentPrice.toFixed(2)} → Stop: $${alert.volatilityStop.stopLoss}`
+    )
+    .join("\n");
 
   const message = `
 📊 *Batch Job Summary*
@@ -286,28 +282,18 @@ ${status.lastRun?.toLocaleString()}
 🔔 Alerts Sent: ${status.alertsSent}
 ❌ Errors: ${status.errors.length}
 
-${
-    alerts.length > 0
-      ? `🚨 *Alerts Generated:*\n${alertsList}`
-      : '✅ No alerts generated this run.'
-  }
+${alerts.length > 0 ? `🚨 *Alerts Generated:*\n${alertsList}` : "✅ No alerts generated this run."}
 
 ⏰ Next run: ${status.nextRun?.toLocaleString()}
   `.trim();
 
-  await sendStockAlertWhatsApp(
-    phone,
-    "BATCH_SUMMARY",
-    0,
-    0,
-    0,
-    0,
-    "HOLD"
-  ).catch(() => {
+  await sendStockAlertWhatsApp(phone, "BATCH_SUMMARY", 0, 0, 0, 0, "HOLD").catch(() => {
     // Use custom message for summary
     console.log("💬 Batch Summary (Development Mode):");
     console.log(`   To: ${phone}`);
-    console.log(`   Stocks: ${status.stocksProcessed}, Alerts: ${status.alertsSent}, Errors: ${status.errors.length}`);
+    console.log(
+      `   Stocks: ${status.stocksProcessed}, Alerts: ${status.alertsSent}, Errors: ${status.errors.length}`
+    );
   });
 }
 
@@ -320,7 +306,9 @@ export function startBatchScheduler(): NodeJS.Timeout | null {
     return null;
   }
 
-  console.log(`⏰ Batch scheduler started (runs every ${BATCH_CONFIG.INTERVAL_MS / 1000 / 60} minutes)`);
+  console.log(
+    `⏰ Batch scheduler started (runs every ${BATCH_CONFIG.INTERVAL_MS / 1000 / 60} minutes)`
+  );
 
   // Run immediately on start
   runBatchJob();

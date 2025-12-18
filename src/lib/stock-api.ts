@@ -25,27 +25,27 @@ interface StockQuote {
  */
 function getStockServiceForSymbol(symbol: string): IStockService {
   // Check if it's an Indian stock
-  const isIndianStock = symbol.endsWith('.NS') || symbol.endsWith('.BO') || symbol.endsWith('.BSE');
-  
+  const isIndianStock = symbol.endsWith(".NS") || symbol.endsWith(".BO") || symbol.endsWith(".BSE");
+
   // Check environment variable for provider override
   const provider = process.env.STOCK_API_PROVIDER?.toLowerCase();
-  
+
   // If specific provider is set, use it
-  if (provider === 'twelvedata') {
+  if (provider === "twelvedata") {
     console.log(`📡 Using Twelve Data for: ${symbol}`);
     return new TwelveDataService();
   }
-  
-  if (provider === 'alphavantage') {
+
+  if (provider === "alphavantage") {
     console.log(`📡 Using Alpha Vantage for: ${symbol}`);
     return new AlphaVantageService();
   }
-  
-  if (provider === 'finnhub') {
+
+  if (provider === "finnhub") {
     console.log(`📡 Using Finnhub for: ${symbol}`);
     return new FinnhubService();
   }
-  
+
   // Default behavior: route by region
   if (isIndianStock) {
     console.log(`📡 Using Alpha Vantage for Indian stock: ${symbol}`);
@@ -67,10 +67,7 @@ export async function fetchCurrentPrice(symbol: string): Promise<number> {
 /**
  * Fetch historical stock data
  */
-export async function fetchHistoricalData(
-  symbol: string,
-  days: number = 30
-): Promise<StockData[]> {
+export async function fetchHistoricalData(symbol: string, days: number = 30): Promise<StockData[]> {
   const service = getStockServiceForSymbol(symbol);
   return service.fetchHistoricalData(symbol, days);
 }

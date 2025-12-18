@@ -5,7 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Recommendation {
   buy: number;
@@ -25,14 +32,16 @@ export function StockRecommendations() {
 
   const fetchRecommendations = async () => {
     if (!symbol) return;
-    
+
     setLoading(true);
     setError("");
-    
+
     try {
-      const response = await fetch(`/api/stock/recommendations?symbol=${encodeURIComponent(symbol.toUpperCase())}`);
+      const response = await fetch(
+        `/api/stock/recommendations?symbol=${encodeURIComponent(symbol.toUpperCase())}`
+      );
       const data = await response.json();
-      
+
       if (data.success) {
         setRecommendations(data.recommendations);
       } else {
@@ -50,7 +59,7 @@ export function StockRecommendations() {
     const bullish = rec.strongBuy + rec.buy;
     const bearish = rec.sell + rec.strongSell;
     const percentage = (bullish / total) * 100;
-    
+
     return { total, bullish, bearish, percentage };
   };
 
@@ -66,9 +75,7 @@ export function StockRecommendations() {
     <Card>
       <CardHeader>
         <CardTitle>📈 Analyst Recommendations</CardTitle>
-        <CardDescription>
-          View analyst buy/sell/hold recommendations for US stocks
-        </CardDescription>
+        <CardDescription>View analyst buy/sell/hold recommendations for US stocks</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex gap-2 mb-4">
@@ -99,7 +106,10 @@ export function StockRecommendations() {
                   <Card key={rec.period} className="border-2">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
-                        {new Date(rec.period).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                        {new Date(rec.period).toLocaleDateString("en-US", {
+                          month: "short",
+                          year: "numeric",
+                        })}
                       </CardTitle>
                       <div className="text-2xl font-bold">
                         {score.percentage.toFixed(0)}% Bullish
@@ -136,32 +146,22 @@ export function StockRecommendations() {
                     return (
                       <TableRow key={rec.period}>
                         <TableCell className="font-medium">
-                          {new Date(rec.period).toLocaleDateString('en-US', { 
-                            month: 'long', 
-                            year: 'numeric' 
+                          {new Date(rec.period).toLocaleDateString("en-US", {
+                            month: "long",
+                            year: "numeric",
                           })}
                         </TableCell>
                         <TableCell className="text-right text-green-600 font-semibold">
                           {rec.strongBuy}
                         </TableCell>
-                        <TableCell className="text-right text-green-500">
-                          {rec.buy}
-                        </TableCell>
-                        <TableCell className="text-right text-yellow-600">
-                          {rec.hold}
-                        </TableCell>
-                        <TableCell className="text-right text-orange-500">
-                          {rec.sell}
-                        </TableCell>
+                        <TableCell className="text-right text-green-500">{rec.buy}</TableCell>
+                        <TableCell className="text-right text-yellow-600">{rec.hold}</TableCell>
+                        <TableCell className="text-right text-orange-500">{rec.sell}</TableCell>
                         <TableCell className="text-right text-red-600 font-semibold">
                           {rec.strongSell}
                         </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {score.total}
-                        </TableCell>
-                        <TableCell>
-                          {getRecommendationBadge(score.percentage)}
-                        </TableCell>
+                        <TableCell className="text-right font-medium">{score.total}</TableCell>
+                        <TableCell>{getRecommendationBadge(score.percentage)}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -175,9 +175,15 @@ export function StockRecommendations() {
                 <div className="text-sm space-y-1">
                   <p className="font-medium">Understanding Analyst Recommendations:</p>
                   <ul className="text-muted-foreground space-y-1 ml-4">
-                    <li>• <strong>Strong Buy/Buy:</strong> Analysts expect the stock to outperform</li>
-                    <li>• <strong>Hold:</strong> Stock expected to perform in line with the market</li>
-                    <li>• <strong>Sell/Strong Sell:</strong> Analysts expect underperformance</li>
+                    <li>
+                      • <strong>Strong Buy/Buy:</strong> Analysts expect the stock to outperform
+                    </li>
+                    <li>
+                      • <strong>Hold:</strong> Stock expected to perform in line with the market
+                    </li>
+                    <li>
+                      • <strong>Sell/Strong Sell:</strong> Analysts expect underperformance
+                    </li>
                     <li>• Higher bullish % indicates stronger analyst confidence</li>
                   </ul>
                 </div>

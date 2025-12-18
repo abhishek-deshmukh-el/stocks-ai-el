@@ -16,14 +16,14 @@ interface EmailOptions {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     // Mock email sending for development
-    console.log('📧 Email Notification (Development Mode)');
-    console.log('To:', options.to);
-    console.log('Subject:', options.subject);
-    console.log('Body:', options.html);
-    
+    console.log("📧 Email Notification (Development Mode)");
+    console.log("To:", options.to);
+    console.log("Subject:", options.subject);
+    console.log("Body:", options.html);
+
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     // In production, use a service like Resend:
     /*
     const resend = new Resend(process.env.RESEND_API_KEY);
@@ -34,10 +34,10 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       html: options.html,
     });
     */
-    
+
     return true;
   } catch (error) {
-    console.error('Email sending failed:', error);
+    console.error("Email sending failed:", error);
     return false;
   }
 }
@@ -111,10 +111,10 @@ export async function sendStockAlertEmail(
                 <li>Risk per share: <strong>$${(currentPrice - stopLoss).toFixed(2)}</strong></li>
                 <li>${
                   stopLossPercentage < 5
-                    ? 'Low volatility - Tight stop, more stable stock'
+                    ? "Low volatility - Tight stop, more stable stock"
                     : stopLossPercentage > 10
-                    ? 'High volatility - Wide stop, riskier position'
-                    : 'Moderate volatility - Standard risk level'
+                      ? "High volatility - Wide stop, riskier position"
+                      : "Moderate volatility - Standard risk level"
                 }</li>
               </ul>
             </div>

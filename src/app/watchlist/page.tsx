@@ -7,10 +7,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useToast } from "@/hooks/use-toast";
-import { US_STOCKS, INDIA_STOCKS, STOCK_WATCHLIST, type WatchlistStock, formatPrice } from "@/lib/constants";
+import {
+  US_STOCKS,
+  INDIA_STOCKS,
+  STOCK_WATCHLIST,
+  type WatchlistStock,
+  formatPrice,
+} from "@/lib/constants";
 import { isAuthenticated, getCurrentUser, logout } from "@/lib/auth";
 import Link from "next/link";
 import { Trash2, Plus, Edit2, X, Check, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
@@ -30,8 +43,8 @@ interface Recommendation {
   symbol: string;
 }
 
-type SortField = 'symbol' | 'name' | 'targetPrice' | 'atrPeriod' | 'atrMultiplier' | 'price';
-type SortDirection = 'asc' | 'desc' | null;
+type SortField = "symbol" | "name" | "targetPrice" | "atrPeriod" | "atrMultiplier" | "price";
+type SortDirection = "asc" | "desc" | null;
 
 export default function WatchlistManagementPage() {
   const router = useRouter();
@@ -42,7 +55,7 @@ export default function WatchlistManagementPage() {
   const [recommendations, setRecommendations] = useState<Map<string, Recommendation>>(new Map());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const [addingRegion, setAddingRegion] = useState<'US' | 'INDIA'>('US');
+  const [addingRegion, setAddingRegion] = useState<"US" | "INDIA">("US");
   const [stockPrices, setStockPrices] = useState<Map<string, StockPriceData>>(new Map());
   const [fetchingPrices, setFetchingPrices] = useState(false);
   const [sortField, setSortField] = useState<SortField | null>(null);
@@ -61,7 +74,7 @@ export default function WatchlistManagementPage() {
     targetPrice: 0,
     atrPeriod: 14,
     atrMultiplier: 2.0,
-    region: 'US' as 'US' | 'INDIA',
+    region: "US" as "US" | "INDIA",
   });
 
   // Edit form state
@@ -70,12 +83,12 @@ export default function WatchlistManagementPage() {
   const fetchAllPrices = async (stocks: WatchlistStock[]) => {
     setFetchingPrices(true);
     const newPrices = new Map<string, StockPriceData>();
-    
+
     for (const stock of stocks) {
       try {
         const response = await fetch(`/api/stock/price?symbol=${encodeURIComponent(stock.symbol)}`);
         const data = await response.json();
-        
+
         if (data.success && data.price) {
           newPrices.set(stock.symbol, {
             price: data.price,
@@ -86,21 +99,23 @@ export default function WatchlistManagementPage() {
         console.error(`Failed to fetch price for ${stock.symbol}:`, error);
       }
     }
-    
+
     setStockPrices(newPrices);
     setFetchingPrices(false);
   };
 
   const fetchRecommendations = async (stocks: WatchlistStock[]) => {
     const newRecs = new Map<string, Recommendation>();
-    
+
     for (const stock of stocks) {
       // Only fetch for US stocks (Finnhub supports US stocks)
-      if (stock.region === 'US') {
+      if (stock.region === "US") {
         try {
-          const response = await fetch(`/api/stock/recommendations?symbol=${encodeURIComponent(stock.symbol)}`);
+          const response = await fetch(
+            `/api/stock/recommendations?symbol=${encodeURIComponent(stock.symbol)}`
+          );
           const data = await response.json();
-          
+
           if (data.success && data.recommendations.length > 0) {
             // Use the most recent recommendation
             newRecs.set(stock.symbol, data.recommendations[0]);
@@ -110,7 +125,7 @@ export default function WatchlistManagementPage() {
         }
       }
     }
-    
+
     setRecommendations(newRecs);
   };
 
@@ -119,7 +134,7 @@ export default function WatchlistManagementPage() {
       router.push("/login");
       return;
     }
-    
+
     const user = getCurrentUser();
     if (user) {
       setUserName(user.name);
@@ -129,17 +144,17 @@ export default function WatchlistManagementPage() {
     try {
       const response = await fetch("/api/watchlist");
       const data = await response.json();
-      
+
       if (data.success) {
         const allStocks = data.stocks;
-        const usFiltered = allStocks.filter((s: WatchlistStock) => s.region === 'US');
-        const indiaFiltered = allStocks.filter((s: WatchlistStock) => s.region === 'INDIA');
+        const usFiltered = allStocks.filter((s: WatchlistStock) => s.region === "US");
+        const indiaFiltered = allStocks.filter((s: WatchlistStock) => s.region === "INDIA");
         setUsStocks(usFiltered);
         setIndiaStocks(indiaFiltered);
-        
+
         // Fetch prices for all stocks
         fetchAllPrices([...usFiltered, ...indiaFiltered]);
-        
+
         // Fetch recommendations for US stocks
         fetchRecommendations([...usFiltered, ...indiaFiltered]);
       }
@@ -177,19 +192,19 @@ export default function WatchlistManagementPage() {
       region: newStock.region,
     };
 
-    if (newStock.region === 'US') {
+    if (newStock.region === "US") {
       setUsStocks([...usStocks, stockToAdd]);
     } else {
       setIndiaStocks([...indiaStocks, stockToAdd]);
     }
-    
+
     setNewStock({
       symbol: "",
       name: "",
       targetPrice: 0,
       atrPeriod: 14,
       atrMultiplier: 2.0,
-      region: 'US',
+      region: "US",
     });
     setIsAddingNew(false);
 
@@ -199,8 +214,8 @@ export default function WatchlistManagementPage() {
     });
   };
 
-  const handleDeleteStock = (symbol: string, region: 'US' | 'INDIA') => {
-    if (region === 'US') {
+  const handleDeleteStock = (symbol: string, region: "US" | "INDIA") => {
+    if (region === "US") {
       setUsStocks(usStocks.filter((s) => s.symbol !== symbol));
     } else {
       setIndiaStocks(indiaStocks.filter((s) => s.symbol !== symbol));
@@ -219,13 +234,13 @@ export default function WatchlistManagementPage() {
   const handleSaveEdit = () => {
     if (!editForm) return;
 
-    const region = editForm.region || 'US';
-    if (region === 'US') {
+    const region = editForm.region || "US";
+    if (region === "US") {
       setUsStocks(usStocks.map((s) => (s.symbol === editingId ? editForm : s)));
     } else {
       setIndiaStocks(indiaStocks.map((s) => (s.symbol === editingId ? editForm : s)));
     }
-    
+
     setEditingId(null);
     setEditForm(null);
 
@@ -243,15 +258,15 @@ export default function WatchlistManagementPage() {
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       // Cycle through: asc -> desc -> null
-      if (sortDirection === 'asc') {
-        setSortDirection('desc');
-      } else if (sortDirection === 'desc') {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else if (sortDirection === "desc") {
         setSortDirection(null);
         setSortField(null);
       }
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
@@ -259,10 +274,10 @@ export default function WatchlistManagementPage() {
     if (sortField !== field) {
       return <ArrowUpDown className="w-4 h-4 ml-1 inline" />;
     }
-    if (sortDirection === 'asc') {
+    if (sortDirection === "asc") {
       return <ArrowUp className="w-4 h-4 ml-1 inline" />;
     }
-    if (sortDirection === 'desc') {
+    if (sortDirection === "desc") {
       return <ArrowDown className="w-4 h-4 ml-1 inline" />;
     }
     return <ArrowUpDown className="w-4 h-4 ml-1 inline" />;
@@ -272,11 +287,14 @@ export default function WatchlistManagementPage() {
     const total = rec.strongBuy + rec.buy + rec.hold + rec.sell + rec.strongSell;
     const bullish = rec.strongBuy + rec.buy;
     const percentage = (bullish / total) * 100;
-    const period = new Date(rec.period).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const period = new Date(rec.period).toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
 
     let badgeClass = "";
     let badgeText = "";
-    
+
     if (percentage >= 70) {
       badgeClass = "bg-green-600 text-white";
       badgeText = "Strong Buy";
@@ -293,7 +311,7 @@ export default function WatchlistManagementPage() {
       badgeClass = "bg-red-600 text-white";
       badgeText = "Strong Sell";
     }
-    
+
     return (
       <HoverCard>
         <HoverCardTrigger asChild>
@@ -354,36 +372,39 @@ export default function WatchlistManagementPage() {
     );
   };
 
-  const sortStocks = useCallback((stocks: WatchlistStock[]) => {
-    if (!sortField || !sortDirection) return stocks;
+  const sortStocks = useCallback(
+    (stocks: WatchlistStock[]) => {
+      if (!sortField || !sortDirection) return stocks;
 
-    return [...stocks].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
+      return [...stocks].sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
 
-      if (sortField === 'price') {
-        aValue = stockPrices.get(a.symbol)?.price ?? 0;
-        bValue = stockPrices.get(b.symbol)?.price ?? 0;
-      } else {
-        aValue = a[sortField];
-        bValue = b[sortField];
-      }
+        if (sortField === "price") {
+          aValue = stockPrices.get(a.symbol)?.price ?? 0;
+          bValue = stockPrices.get(b.symbol)?.price ?? 0;
+        } else {
+          aValue = a[sortField];
+          bValue = b[sortField];
+        }
 
-      // Handle undefined values
-      if (aValue === undefined) aValue = 0;
-      if (bValue === undefined) bValue = 0;
+        // Handle undefined values
+        if (aValue === undefined) aValue = 0;
+        if (bValue === undefined) bValue = 0;
 
-      // String comparison
-      if (typeof aValue === 'string') {
-        return sortDirection === 'asc'
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
+        // String comparison
+        if (typeof aValue === "string") {
+          return sortDirection === "asc"
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue);
+        }
 
-      // Number comparison
-      return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-    });
-  }, [sortField, sortDirection, stockPrices]);
+        // Number comparison
+        return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
+      });
+    },
+    [sortField, sortDirection, stockPrices]
+  );
 
   const sortedUsStocks = useMemo(() => sortStocks(usStocks), [usStocks, sortStocks]);
   const sortedIndiaStocks = useMemo(() => sortStocks(indiaStocks), [indiaStocks, sortStocks]);
@@ -391,7 +412,7 @@ export default function WatchlistManagementPage() {
   const totalStocks = usStocks.length + indiaStocks.length;
   const totalWithTargets = [...usStocks, ...indiaStocks].filter((s) => s.targetPrice).length;
 
-  const renderStockTable = (stocks: WatchlistStock[], region: 'US' | 'INDIA') => {
+  const renderStockTable = (stocks: WatchlistStock[], region: "US" | "INDIA") => {
     if (stocks.length === 0) {
       return (
         <div className="text-center py-8 text-muted-foreground">
@@ -405,44 +426,44 @@ export default function WatchlistManagementPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead 
+              <TableHead
                 className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort('symbol')}
+                onClick={() => handleSort("symbol")}
               >
-                Symbol {getSortIcon('symbol')}
+                Symbol {getSortIcon("symbol")}
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort('name')}
+                onClick={() => handleSort("name")}
               >
-                Name {getSortIcon('name')}
+                Name {getSortIcon("name")}
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort('targetPrice')}
+                onClick={() => handleSort("targetPrice")}
               >
-                Target Price {getSortIcon('targetPrice')}
+                Target Price {getSortIcon("targetPrice")}
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort('atrPeriod')}
+                onClick={() => handleSort("atrPeriod")}
               >
-                ATR Period {getSortIcon('atrPeriod')}
+                ATR Period {getSortIcon("atrPeriod")}
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort('atrMultiplier')}
+                onClick={() => handleSort("atrMultiplier")}
               >
-                ATR Multiplier {getSortIcon('atrMultiplier')}
+                ATR Multiplier {getSortIcon("atrMultiplier")}
               </TableHead>
-              <TableHead 
+              <TableHead
                 className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort('price')}
+                onClick={() => handleSort("price")}
               >
-                Current Price {getSortIcon('price')}
+                Current Price {getSortIcon("price")}
               </TableHead>
               <TableHead>Last Updated</TableHead>
-              {region === 'US' && <TableHead>Analyst Rating</TableHead>}
+              {region === "US" && <TableHead>Analyst Rating</TableHead>}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -457,9 +478,7 @@ export default function WatchlistManagementPage() {
                     <TableCell>
                       <Input
                         value={editForm.name}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, name: e.target.value })
-                        }
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                         className="w-full"
                       />
                     </TableCell>
@@ -524,7 +543,7 @@ export default function WatchlistManagementPage() {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
-                    {region === 'US' && (
+                    {region === "US" && (
                       <TableCell>
                         {recommendations.has(stock.symbol) ? (
                           getRecommendationBadge(recommendations.get(stock.symbol)!)
@@ -535,18 +554,10 @@ export default function WatchlistManagementPage() {
                     )}
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
-                        <Button
-                          size="sm"
-                          variant="default"
-                          onClick={handleSaveEdit}
-                        >
+                        <Button size="sm" variant="default" onClick={handleSaveEdit}>
                           <Check className="w-4 h-4" />
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleCancelEdit}
-                        >
+                        <Button size="sm" variant="outline" onClick={handleCancelEdit}>
                           <X className="w-4 h-4" />
                         </Button>
                       </div>
@@ -585,7 +596,7 @@ export default function WatchlistManagementPage() {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
-                    {region === 'US' && (
+                    {region === "US" && (
                       <TableCell>
                         {recommendations.has(stock.symbol) ? (
                           getRecommendationBadge(recommendations.get(stock.symbol)!)
@@ -596,11 +607,7 @@ export default function WatchlistManagementPage() {
                     )}
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleEditStock(stock)}
-                        >
+                        <Button size="sm" variant="ghost" onClick={() => handleEditStock(stock)}>
                           <Edit2 className="w-4 h-4" />
                         </Button>
                         <Button
@@ -633,11 +640,7 @@ export default function WatchlistManagementPage() {
             </p>
           </div>
           <div className="flex gap-2 items-center">
-            {userName && (
-              <span className="text-sm text-muted-foreground">
-                Welcome, {userName}
-              </span>
-            )}
+            {userName && <span className="text-sm text-muted-foreground">Welcome, {userName}</span>}
             <Button asChild variant="outline">
               <Link href="/dashboard">Dashboard</Link>
             </Button>
@@ -689,7 +692,7 @@ export default function WatchlistManagementPage() {
                       id="region"
                       value={newStock.region}
                       onChange={(e) =>
-                        setNewStock({ ...newStock, region: e.target.value as 'US' | 'INDIA' })
+                        setNewStock({ ...newStock, region: e.target.value as "US" | "INDIA" })
                       }
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
@@ -701,7 +704,7 @@ export default function WatchlistManagementPage() {
                     <Label htmlFor="symbol">Stock Symbol *</Label>
                     <Input
                       id="symbol"
-                      placeholder={newStock.region === 'US' ? 'AAPL' : 'RELIANCE.NS'}
+                      placeholder={newStock.region === "US" ? "AAPL" : "RELIANCE.NS"}
                       value={newStock.symbol}
                       onChange={(e) =>
                         setNewStock({ ...newStock, symbol: e.target.value.toUpperCase() })
@@ -782,7 +785,13 @@ export default function WatchlistManagementPage() {
                 </CardDescription>
               </div>
               {!isAddingNew && (
-                <Button onClick={() => { setAddingRegion('US'); setIsAddingNew(true); setNewStock({ ...newStock, region: 'US' }); }}>
+                <Button
+                  onClick={() => {
+                    setAddingRegion("US");
+                    setIsAddingNew(true);
+                    setNewStock({ ...newStock, region: "US" });
+                  }}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add US Stock
                 </Button>
@@ -792,7 +801,7 @@ export default function WatchlistManagementPage() {
               {isLoading ? (
                 <div className="text-center py-8 text-muted-foreground">Loading...</div>
               ) : (
-                renderStockTable(sortedUsStocks, 'US')
+                renderStockTable(sortedUsStocks, "US")
               )}
             </CardContent>
           </Card>
@@ -803,11 +812,18 @@ export default function WatchlistManagementPage() {
               <div>
                 <CardTitle>🇮🇳 India Stocks</CardTitle>
                 <CardDescription>
-                  {indiaStocks.length} Indian stock{indiaStocks.length !== 1 ? "s" : ""} being monitored
+                  {indiaStocks.length} Indian stock{indiaStocks.length !== 1 ? "s" : ""} being
+                  monitored
                 </CardDescription>
               </div>
               {!isAddingNew && (
-                <Button onClick={() => { setAddingRegion('INDIA'); setIsAddingNew(true); setNewStock({ ...newStock, region: 'INDIA' }); }}>
+                <Button
+                  onClick={() => {
+                    setAddingRegion("INDIA");
+                    setIsAddingNew(true);
+                    setNewStock({ ...newStock, region: "INDIA" });
+                  }}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add India Stock
                 </Button>
@@ -817,7 +833,7 @@ export default function WatchlistManagementPage() {
               {isLoading ? (
                 <div className="text-center py-8 text-muted-foreground">Loading...</div>
               ) : (
-                renderStockTable(sortedIndiaStocks, 'INDIA')
+                renderStockTable(sortedIndiaStocks, "INDIA")
               )}
             </CardContent>
           </Card>
@@ -829,11 +845,23 @@ export default function WatchlistManagementPage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>• <strong>US Stocks:</strong> Use standard symbols (AAPL, MSFT, GOOGL)</li>
-              <li>• <strong>Indian Stocks:</strong> Add .NS suffix for NSE stocks (RELIANCE.NS, TCS.NS)</li>
-              <li>• <strong>ATR Period:</strong> Default is 14 days, suitable for most stocks</li>
-              <li>• <strong>ATR Multiplier:</strong> Higher values (2.5-3.0) for volatile stocks, lower (1.5-2.0) for stable ones</li>
-              <li>• <strong>Target Price:</strong> Optional - set if you have a specific exit target</li>
+              <li>
+                • <strong>US Stocks:</strong> Use standard symbols (AAPL, MSFT, GOOGL)
+              </li>
+              <li>
+                • <strong>Indian Stocks:</strong> Add .NS suffix for NSE stocks (RELIANCE.NS,
+                TCS.NS)
+              </li>
+              <li>
+                • <strong>ATR Period:</strong> Default is 14 days, suitable for most stocks
+              </li>
+              <li>
+                • <strong>ATR Multiplier:</strong> Higher values (2.5-3.0) for volatile stocks,
+                lower (1.5-2.0) for stable ones
+              </li>
+              <li>
+                • <strong>Target Price:</strong> Optional - set if you have a specific exit target
+              </li>
               <li>• Changes are saved locally - batch job will use updated settings on next run</li>
             </ul>
           </CardContent>

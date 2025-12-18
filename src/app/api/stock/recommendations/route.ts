@@ -4,7 +4,7 @@ import { FinnhubService } from "@/lib/services/finnhub.service";
 /**
  * API Route: Get Stock Recommendations
  * GET /api/stock/recommendations?symbol=TSLA
- * 
+ *
  * Returns analyst recommendations (buy/hold/sell) for a stock
  */
 export async function GET(request: Request) {
