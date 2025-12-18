@@ -13,7 +13,7 @@ import {
 import { fetchCurrentPrice, fetchHistoricalData } from "./stock-api";
 import { calculateATR, calculateVolatilityStop, type VolatilityStop } from "./volatility";
 import { sendStockAlertWhatsApp } from "./whatsapp";
-import { isMarketOpen, getMarketStatus } from "./market-hours";
+import { isMarketOpen, getMarketStatus } from "./services/finnhub.service";
 
 interface StockAlert {
   stock: WatchlistStock;
@@ -176,8 +176,9 @@ async function sendAlerts(alert: StockAlert): Promise<boolean> {
 
 /**
  * Run the batch job
+ * @param isManual - If true, bypasses market hours check
  */
-export async function runBatchJob(): Promise<BatchJobStatus> {
+export async function runBatchJob(isManual = false): Promise<BatchJobStatus> {
   const status: BatchJobStatus = {
     lastRun: new Date(),
     nextRun: new Date(Date.now() + BATCH_CONFIG.INTERVAL_MS),
@@ -189,15 +190,17 @@ export async function runBatchJob(): Promise<BatchJobStatus> {
 
   console.log("\n🚀 Starting batch job...");
   
-  // Check if market is open
-  if (!isMarketOpen()) {
-    const marketStatus = getMarketStatus();
-    console.log(`⏸️  Batch job skipped: ${marketStatus.message}`);
-    console.log(`📅 Next market open: ${marketStatus.nextOpen.toLocaleString('en-US', { timeZone: 'America/New_York' })} EST`);
+  // Check if market is open (skip check for manual runs)
+  if (!isManual && !(await isMarketOpen())) {
+    console.log(`⏸️  Batch job skipped: US Market is closed`);
     
     status.isRunning = false;
     status.errors.push('Market is currently closed');
     return status;
+  }
+
+  if (isManual) {
+    console.log(`🔧 Manual run: Bypassing market hours check`);
   }
 
   console.log(`📊 Processing ${STOCK_WATCHLIST.length} stocks`);

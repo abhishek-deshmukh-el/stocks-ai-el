@@ -18,13 +18,13 @@ export interface WatchlistStock {
  * US stocks to monitor for volatility stop triggers
  */
 export const US_STOCKS: WatchlistStock[] = [
-  {
-    symbol: "AMD",
-    name: "Advanced Micro Devices, Inc.",
-    atrPeriod: 14,
-    atrMultiplier: 2.0,
-    region: 'US',
-  },
+  // {
+  //   symbol: "AMD",
+  //   name: "Advanced Micro Devices, Inc.",
+  //   atrPeriod: 14,
+  //   atrMultiplier: 2.0,
+  //   region: 'US',
+  // },
   // {
   //   symbol: "ASTS",
   //   name: "AST & Science, LLC",
@@ -116,20 +116,20 @@ export const US_STOCKS: WatchlistStock[] = [
   //   atrMultiplier: 2.0,
   //   region: 'US',
   // },
-  {
-    symbol: "RBRK",
-    name: "Rubrik Inc.",
-    atrPeriod: 14,
-    atrMultiplier: 2.5,
-    region: 'US',
-  },
   // {
-  //   symbol: "SMCI",
-  //   name: "Super Micro Computer, Inc.",
+  //   symbol: "RBRK",
+  //   name: "Rubrik Inc.",
   //   atrPeriod: 14,
   //   atrMultiplier: 2.5,
   //   region: 'US',
   // },
+  {
+    symbol: "SMCI",
+    name: "Super Micro Computer, Inc.",
+    atrPeriod: 14,
+    atrMultiplier: 2.5,
+    region: 'US',
+  },
   // {
   //   symbol: "TMQ",
   //   name: "Trilogy Metals Inc",

@@ -161,7 +161,7 @@ export default function StockAnalyzer() {
               </Button>
 
               <div className="pt-4 border-t">
-                <p className="text-sm font-medium mb-2">What you'll receive:</p>
+                <p className="text-sm font-medium mb-2">What you&apos;ll receive:</p>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li>✅ Stop loss triggered alerts</li>
                   <li>✅ High volatility warnings</li>

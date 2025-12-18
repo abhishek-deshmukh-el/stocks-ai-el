@@ -6,12 +6,16 @@ import { runBatchJob } from "@/lib/batch-job";
  * POST /api/batch/run
  * 
  * Manually trigger the batch job to check all stocks in watchlist
+ * Body params: { manual: true } to bypass market hours check
  */
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    console.log("📡 API: Manual batch job triggered");
+    const body = await request.json().catch(() => ({}));
+    const isManual = body.manual === true;
     
-    const status = await runBatchJob();
+    console.log(`📡 API: ${isManual ? 'Manual' : 'Automatic'} batch job triggered`);
+    
+    const status = await runBatchJob(isManual);
     
     return NextResponse.json({
       success: true,

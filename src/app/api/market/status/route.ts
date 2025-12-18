@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
-import { getMarketStatus } from "@/lib/market-hours";
+import { getMarketStatus } from "@/lib/services/finnhub.service";
 
 /**
  * API Route: Get Market Status
  * GET /api/market/status
  * 
- * Returns current market status (open/closed) and next open time
+ * Returns current market status for US and Indian markets
  */
 export async function GET() {
   try {
-    const status = getMarketStatus();
+    const status = await getMarketStatus();
     
     return NextResponse.json({
       success: true,
-      ...status,
+      markets: status,
     });
   } catch (error) {
     console.error("API Error:", error);

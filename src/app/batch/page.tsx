@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { STOCK_WATCHLIST, formatPrice, type WatchlistStock } from "@/lib/constants";
 import { isAuthenticated, getCurrentUser, logout } from "@/lib/auth";
-import { getMarketStatus } from "@/lib/market-hours";
 import Link from "next/link";
 import { ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
 
@@ -40,10 +39,17 @@ export default function BatchJobPage() {
       setUserName(user.name);
     }
     
-    // Calculate market status on client side (no API call needed)
-    const updateMarketStatus = () => {
-      const status = getMarketStatus();
-      setMarketStatus(status);
+    // Fetch market status from API
+    const updateMarketStatus = async () => {
+      try {
+        const response = await fetch('/api/market/status');
+        const data = await response.json();
+        if (data.success) {
+          setMarketStatus(data.markets);
+        }
+      } catch (error) {
+        console.error('Failed to fetch market status:', error);
+      }
     };
     
     updateMarketStatus();
@@ -133,6 +139,10 @@ export default function BatchJobPage() {
     try {
       const response = await fetch("/api/batch/run", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ manual: true }),
       });
 
       const data = await response.json();
@@ -183,21 +193,40 @@ export default function BatchJobPage() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid lg:grid-cols-3 gap-6 mb-6">
           <Card>
             <CardHeader>
               <CardTitle>Market Status</CardTitle>
-              <CardDescription>US Stock Market</CardDescription>
+              <CardDescription>US &amp; India Markets</CardDescription>
             </CardHeader>
             <CardContent>
-              <Badge variant={marketStatus?.isOpen ? "default" : "secondary"} className="text-lg px-4 py-2">
-                {marketStatus?.isOpen ? "🟢 Open" : "🔴 Closed"}
-              </Badge>
-              {marketStatus && (
-                <p className="text-xs text-muted-foreground mt-3">
-                  {marketStatus.message}
-                </p>
-              )}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">🇺🇸 US (NYSE/NASDAQ)</span>
+                  <Badge variant={marketStatus?.us?.isOpen ? "default" : "secondary"} className="text-sm px-3 py-1">
+                    {marketStatus?.us?.isOpen ? "🟢 Open" : "🔴 Closed"}
+                  </Badge>
+                </div>
+                {marketStatus?.us?.holiday && (
+                  <p className="text-xs text-muted-foreground ml-6">Holiday: {marketStatus.us.holiday}</p>
+                )}
+                {marketStatus?.us?.session && marketStatus?.us?.isOpen && (
+                  <p className="text-xs text-muted-foreground ml-6">Session: {marketStatus.us.session}</p>
+                )}
+                
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <span className="text-sm font-medium">🇮🇳 India (NSE/BSE)</span>
+                  <Badge variant={marketStatus?.india?.isOpen ? "default" : "secondary"} className="text-sm px-3 py-1">
+                    {marketStatus?.india?.isOpen ? "🟢 Open" : "🔴 Closed"}
+                  </Badge>
+                </div>
+                {marketStatus?.india?.holiday && (
+                  <p className="text-xs text-muted-foreground ml-6">Holiday: {marketStatus.india.holiday}</p>
+                )}
+                {marketStatus?.india?.session && marketStatus?.india?.isOpen && (
+                  <p className="text-xs text-muted-foreground ml-6">Session: {marketStatus.india.session}</p>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -217,41 +246,33 @@ export default function BatchJobPage() {
           <Card>
             <CardHeader>
               <CardTitle>Batch Status</CardTitle>
-              <CardDescription>Current job status</CardDescription>
+              <CardDescription>Trigger and monitor batch jobs</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Badge variant={isRunning ? "default" : "secondary"} className="text-lg px-4 py-2">
-                {isRunning ? "Running..." : "Idle"}
-              </Badge>
-              {lastRun && (
-                <p className="text-xs text-muted-foreground mt-3">
-                  Last run: {lastRun}
+            <CardContent className="space-y-4">
+              <div>
+                <Badge variant={isRunning ? "default" : "secondary"} className="text-lg px-4 py-2">
+                  {isRunning ? "Running..." : "Idle"}
+                </Badge>
+                {lastRun && (
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Last run: {lastRun}
+                  </p>
+                )}
+              </div>
+              
+              <div className="pt-2 border-t">
+                <Button 
+                  onClick={runBatchJob} 
+                  disabled={isRunning}
+                  size="lg"
+                  className="w-full"
+                >
+                  {isRunning ? "Processing..." : "Run Batch Job Now"}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Fetches prices and calculates volatility for all {STOCK_WATCHLIST.length} stocks
                 </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Run Batch Job</CardTitle>
-              <CardDescription>
-                {marketStatus?.isOpen 
-                  ? "Manually trigger automated check" 
-                  : "Available when market is open"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={runBatchJob} 
-                disabled={isRunning}
-                size="lg"
-                className="w-full"
-              >
-                {isRunning ? "Processing..." : "Run Batch Job Now"}
-              </Button>
-              <p className="text-xs text-muted-foreground mt-3 text-center">
-                Automatically fetches current prices and calculates volatility for all {STOCK_WATCHLIST.length} stocks
-              </p>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -351,7 +372,7 @@ export default function BatchJobPage() {
                   {filteredAndSortedStocks.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        No stocks found matching "{searchQuery}"
+                        No stocks found matching &quot;{searchQuery}&quot;
                       </TableCell>
                     </TableRow>
                   ) : (

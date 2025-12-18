@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useToast } from "@/hooks/use-toast";
 import { US_STOCKS, INDIA_STOCKS, STOCK_WATCHLIST, type WatchlistStock, formatPrice } from "@/lib/constants";
 import { isAuthenticated, getCurrentUser, logout } from "@/lib/auth";
@@ -19,6 +20,16 @@ interface StockPriceData {
   fetchedAt: Date;
 }
 
+interface Recommendation {
+  buy: number;
+  hold: number;
+  period: string;
+  sell: number;
+  strongBuy: number;
+  strongSell: number;
+  symbol: string;
+}
+
 type SortField = 'symbol' | 'name' | 'targetPrice' | 'atrPeriod' | 'atrMultiplier' | 'price';
 type SortDirection = 'asc' | 'desc' | null;
 
@@ -28,6 +39,7 @@ export default function WatchlistManagementPage() {
   const [usStocks, setUsStocks] = useState<WatchlistStock[]>([]);
   const [indiaStocks, setIndiaStocks] = useState<WatchlistStock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [recommendations, setRecommendations] = useState<Map<string, Recommendation>>(new Map());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [addingRegion, setAddingRegion] = useState<'US' | 'INDIA'>('US');
@@ -55,10 +67,6 @@ export default function WatchlistManagementPage() {
   // Edit form state
   const [editForm, setEditForm] = useState<WatchlistStock | null>(null);
 
-  useEffect(() => {
-    loadWatchlist();
-  }, []);
-
   const fetchAllPrices = async (stocks: WatchlistStock[]) => {
     setFetchingPrices(true);
     const newPrices = new Map<string, StockPriceData>();
@@ -83,7 +91,30 @@ export default function WatchlistManagementPage() {
     setFetchingPrices(false);
   };
 
-  const loadWatchlist = async () => {
+  const fetchRecommendations = async (stocks: WatchlistStock[]) => {
+    const newRecs = new Map<string, Recommendation>();
+    
+    for (const stock of stocks) {
+      // Only fetch for US stocks (Finnhub supports US stocks)
+      if (stock.region === 'US') {
+        try {
+          const response = await fetch(`/api/stock/recommendations?symbol=${encodeURIComponent(stock.symbol)}`);
+          const data = await response.json();
+          
+          if (data.success && data.recommendations.length > 0) {
+            // Use the most recent recommendation
+            newRecs.set(stock.symbol, data.recommendations[0]);
+          }
+        } catch (error) {
+          console.error(`Failed to fetch recommendations for ${stock.symbol}:`, error);
+        }
+      }
+    }
+    
+    setRecommendations(newRecs);
+  };
+
+  const loadWatchlist = useCallback(async () => {
     if (!isAuthenticated()) {
       router.push("/login");
       return;
@@ -108,6 +139,9 @@ export default function WatchlistManagementPage() {
         
         // Fetch prices for all stocks
         fetchAllPrices([...usFiltered, ...indiaFiltered]);
+        
+        // Fetch recommendations for US stocks
+        fetchRecommendations([...usFiltered, ...indiaFiltered]);
       }
     } catch (error) {
       toast({
@@ -118,7 +152,11 @@ export default function WatchlistManagementPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router, toast]);
+
+  useEffect(() => {
+    loadWatchlist();
+  }, [loadWatchlist]);
 
   const handleAddStock = () => {
     if (!newStock.symbol || !newStock.name) {
@@ -230,7 +268,93 @@ export default function WatchlistManagementPage() {
     return <ArrowUpDown className="w-4 h-4 ml-1 inline" />;
   };
 
-  const sortStocks = (stocks: WatchlistStock[]) => {
+  const getRecommendationBadge = (rec: Recommendation) => {
+    const total = rec.strongBuy + rec.buy + rec.hold + rec.sell + rec.strongSell;
+    const bullish = rec.strongBuy + rec.buy;
+    const percentage = (bullish / total) * 100;
+    const period = new Date(rec.period).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+    let badgeClass = "";
+    let badgeText = "";
+    
+    if (percentage >= 70) {
+      badgeClass = "bg-green-600 text-white";
+      badgeText = "Strong Buy";
+    } else if (percentage >= 55) {
+      badgeClass = "bg-green-500 text-white";
+      badgeText = "Buy";
+    } else if (percentage >= 45) {
+      badgeClass = "bg-yellow-500 text-black";
+      badgeText = "Hold";
+    } else if (percentage >= 30) {
+      badgeClass = "bg-orange-500 text-white";
+      badgeText = "Sell";
+    } else {
+      badgeClass = "bg-red-600 text-white";
+      badgeText = "Strong Sell";
+    }
+    
+    return (
+      <HoverCard>
+        <HoverCardTrigger asChild>
+          <Badge className={`${badgeClass} cursor-help`}>{badgeText}</Badge>
+        </HoverCardTrigger>
+        <HoverCardContent className="w-80">
+          <div className="space-y-2">
+            <h4 className="text-sm font-semibold">{period} Analyst Recommendations</h4>
+            <div className="text-xs text-muted-foreground">
+              {total} analysts covering this stock
+            </div>
+            <div className="space-y-1.5 pt-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-green-600"></span>
+                  Strong Buy
+                </span>
+                <span className="font-semibold">{rec.strongBuy}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                  Buy
+                </span>
+                <span className="font-semibold">{rec.buy}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+                  Hold
+                </span>
+                <span className="font-semibold">{rec.hold}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+                  Sell
+                </span>
+                <span className="font-semibold">{rec.sell}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-red-600"></span>
+                  Strong Sell
+                </span>
+                <span className="font-semibold">{rec.strongSell}</span>
+              </div>
+            </div>
+            <div className="pt-2 mt-2 border-t">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Bullish Sentiment</span>
+                <span className="font-bold text-lg">{percentage.toFixed(0)}%</span>
+              </div>
+            </div>
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+    );
+  };
+
+  const sortStocks = useCallback((stocks: WatchlistStock[]) => {
     if (!sortField || !sortDirection) return stocks;
 
     return [...stocks].sort((a, b) => {
@@ -259,10 +383,10 @@ export default function WatchlistManagementPage() {
       // Number comparison
       return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
     });
-  };
+  }, [sortField, sortDirection, stockPrices]);
 
-  const sortedUsStocks = useMemo(() => sortStocks(usStocks), [usStocks, sortField, sortDirection, stockPrices]);
-  const sortedIndiaStocks = useMemo(() => sortStocks(indiaStocks), [indiaStocks, sortField, sortDirection, stockPrices]);
+  const sortedUsStocks = useMemo(() => sortStocks(usStocks), [usStocks, sortStocks]);
+  const sortedIndiaStocks = useMemo(() => sortStocks(indiaStocks), [indiaStocks, sortStocks]);
 
   const totalStocks = usStocks.length + indiaStocks.length;
   const totalWithTargets = [...usStocks, ...indiaStocks].filter((s) => s.targetPrice).length;
@@ -318,6 +442,7 @@ export default function WatchlistManagementPage() {
                 Current Price {getSortIcon('price')}
               </TableHead>
               <TableHead>Last Updated</TableHead>
+              {region === 'US' && <TableHead>Analyst Rating</TableHead>}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -399,6 +524,15 @@ export default function WatchlistManagementPage() {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
+                    {region === 'US' && (
+                      <TableCell>
+                        {recommendations.has(stock.symbol) ? (
+                          getRecommendationBadge(recommendations.get(stock.symbol)!)
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
                         <Button
@@ -451,6 +585,15 @@ export default function WatchlistManagementPage() {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
+                    {region === 'US' && (
+                      <TableCell>
+                        {recommendations.has(stock.symbol) ? (
+                          getRecommendationBadge(recommendations.get(stock.symbol)!)
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
                         <Button
