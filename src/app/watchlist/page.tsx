@@ -24,8 +24,7 @@ import {
   type WatchlistStock,
   formatPrice,
 } from "@/lib/constants";
-import { isAuthenticated, getCurrentUser, logout } from "@/lib/auth";
-import Link from "next/link";
+import { isAuthenticated, getCurrentUser } from "@/lib/auth";
 import { Trash2, Plus, Edit2, X, Check, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 interface StockPriceData {
@@ -48,7 +47,6 @@ type SortDirection = "asc" | "desc" | null;
 
 export default function WatchlistManagementPage() {
   const router = useRouter();
-  const [userName, setUserName] = useState("");
   const [usStocks, setUsStocks] = useState<WatchlistStock[]>([]);
   const [indiaStocks, setIndiaStocks] = useState<WatchlistStock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,11 +59,6 @@ export default function WatchlistManagementPage() {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const { toast } = useToast();
-
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
-  };
 
   // Form state for adding new stock
   const [newStock, setNewStock] = useState({
@@ -133,11 +126,6 @@ export default function WatchlistManagementPage() {
     if (!isAuthenticated()) {
       router.push("/login");
       return;
-    }
-
-    const user = getCurrentUser();
-    if (user) {
-      setUserName(user.name);
     }
 
     setIsLoading(true);
@@ -632,22 +620,11 @@ export default function WatchlistManagementPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Manage Watchlist</h1>
-            <p className="text-muted-foreground">
-              Add, edit, or remove stocks from your monitoring list
-            </p>
-          </div>
-          <div className="flex gap-2 items-center">
-            {userName && <span className="text-sm text-muted-foreground">Welcome, {userName}</span>}
-            <Button asChild variant="outline">
-              <Link href="/dashboard">Dashboard</Link>
-            </Button>
-            <Button onClick={handleLogout} variant="destructive">
-              Logout
-            </Button>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Manage Watchlist</h1>
+          <p className="text-muted-foreground">
+            Add, edit, or remove stocks from your monitoring list
+          </p>
         </div>
 
         <div className="grid gap-6 mb-6">

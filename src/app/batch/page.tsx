@@ -15,9 +15,8 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { STOCK_WATCHLIST, formatPrice, type WatchlistStock } from "@/lib/constants";
-import { isAuthenticated, getCurrentUser, logout } from "@/lib/auth";
-import Link from "next/link";
+import { STOCK_WATCHLIST, formatPrice } from "@/lib/constants";
+import { isAuthenticated } from "@/lib/auth";
 import { ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
 
 type SortField = "symbol" | "name" | "targetPrice" | "atrPeriod" | "atrMultiplier";
@@ -25,7 +24,6 @@ type SortDirection = "asc" | "desc" | null;
 
 export default function BatchJobPage() {
   const router = useRouter();
-  const [userName, setUserName] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [lastRun, setLastRun] = useState<string | null>(null);
   const [results, setResults] = useState<any>(null);
@@ -40,10 +38,6 @@ export default function BatchJobPage() {
     if (!isAuthenticated()) {
       router.push("/login");
       return;
-    }
-    const user = getCurrentUser();
-    if (user) {
-      setUserName(user.name);
     }
 
     // Fetch market status from API
@@ -60,15 +54,10 @@ export default function BatchJobPage() {
     };
 
     updateMarketStatus();
-    // Refresh market status every minute
-    const interval = setInterval(updateMarketStatus, 60000);
+    // Refresh market status every 5 minutes
+    const interval = setInterval(updateMarketStatus, 300000);
     return () => clearInterval(interval);
   }, [router]);
-
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
-  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -177,21 +166,6 @@ export default function BatchJobPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header with Logout */}
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Welcome, {userName}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link href="/dashboard">Home</Link>
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              Logout
-            </Button>
-          </div>
-        </div>
-
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Automated Monitoring Dashboard</h1>
           <p className="text-muted-foreground">
