@@ -76,7 +76,6 @@ export class FinnhubService implements IStockService {
 
       const response = await fetch(url);
       const data = await response.json();
-      console.log(`📥 Response for ${variant}:`, JSON.stringify(data, null, 2));
 
       // Check for error
       if (data.error) {
@@ -150,7 +149,6 @@ export class FinnhubService implements IStockService {
 
       const response = await fetch(url);
       const data = await response.json();
-      console.log(`📥 Response for ${variant} (status):`, data.s);
 
       // Check for error or no data
       if (data.s === "no_data") {
@@ -205,7 +203,6 @@ export class FinnhubService implements IStockService {
       }
 
       const data = await response.json();
-      console.log(`📥 Recommendations for ${symbol}:`, JSON.stringify(data, null, 2));
 
       if (Array.isArray(data) && data.length > 0) {
         console.log(
