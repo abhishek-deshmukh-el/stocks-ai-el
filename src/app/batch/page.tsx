@@ -17,7 +17,17 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { STOCK_WATCHLIST, formatPrice } from "@/lib/constants";
 import { isAuthenticated } from "@/lib/auth";
-import { ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
+import {
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Search,
+  TrendingUp,
+  List,
+  Activity,
+  Play,
+  Clock,
+} from "lucide-react";
 
 type SortField =
   | "symbol"
@@ -123,8 +133,31 @@ export default function BatchJobPage() {
     // Apply sorting
     if (sortField && sortDirection) {
       filtered = [...filtered].sort((a, b) => {
-        let aValue: any = a[sortField];
-        let bValue: any = b[sortField];
+        let aValue: string | number;
+        let bValue: string | number;
+
+        // Get values based on sortField
+        switch (sortField) {
+          case "symbol":
+          case "name":
+            aValue = a[sortField];
+            bValue = b[sortField];
+            break;
+          case "targetPrice":
+          case "atrPeriod":
+          case "atrMultiplier":
+            aValue = a[sortField] ?? 0;
+            bValue = b[sortField] ?? 0;
+            break;
+          case "currentPrice":
+          case "stopLoss":
+            aValue = 0;
+            bValue = 0;
+            break;
+          default:
+            aValue = 0;
+            bValue = 0;
+        }
 
         // Handle undefined values
         if (aValue === undefined) aValue = 0;
@@ -133,12 +166,14 @@ export default function BatchJobPage() {
         // String comparison
         if (typeof aValue === "string") {
           return sortDirection === "asc"
-            ? aValue.localeCompare(bValue)
-            : bValue.localeCompare(aValue);
+            ? aValue.localeCompare(bValue as string)
+            : (bValue as string).localeCompare(aValue);
         }
 
         // Number comparison
-        return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
+        return sortDirection === "asc"
+          ? (aValue as number) - (bValue as number)
+          : (bValue as number) - (aValue as number);
       });
     }
 
@@ -212,44 +247,44 @@ export default function BatchJobPage() {
     }
   };
 
-  const runBatchJob = async () => {
-    setIsRunning(true);
-    toast({
-      title: "Starting Batch Job",
-      description: `Processing ${STOCK_WATCHLIST.length} stocks...`,
-    });
+  // const runBatchJob = async () => {
+  //   setIsRunning(true);
+  //   toast({
+  //     title: "Starting Batch Job",
+  //     description: `Processing ${STOCK_WATCHLIST.length} stocks...`,
+  //   });
 
-    try {
-      const response = await fetch("/api/batch/run", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ manual: true }),
-      });
+  //   try {
+  //     const response = await fetch("/api/batch/run", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ manual: true }),
+  //     });
 
-      const data = await response.json();
+  //     const data = await response.json();
 
-      if (data.success) {
-        setResults(data.status);
-        setLastRun(new Date().toLocaleString());
-        toast({
-          title: "Batch Job Complete! 🎉",
-          description: `Processed ${data.status.stocksProcessed} stocks, sent ${data.status.alertsSent} alerts`,
-        });
-      } else {
-        throw new Error(data.error || "Batch job failed");
-      }
-    } catch (error) {
-      toast({
-        title: "Batch Job Failed",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRunning(false);
-    }
-  };
+  //     if (data.success) {
+  //       setResults(data.status);
+  //       setLastRun(new Date().toLocaleString());
+  //       toast({
+  //         title: "Batch Job Complete! 🎉",
+  //         description: `Processed ${data.status.stocksProcessed} stocks, sent ${data.status.alertsSent} alerts`,
+  //       });
+  //     } else {
+  //       throw new Error(data.error || "Batch job failed");
+  //     }
+  //   } catch (error) {
+  //     toast({
+  //       title: "Batch Job Failed",
+  //       description: error instanceof Error ? error.message : "Unknown error",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setIsRunning(false);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-8">
@@ -261,92 +296,166 @@ export default function BatchJobPage() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6 mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Market Status</CardTitle>
-              <CardDescription>US &amp; India Markets</CardDescription>
+        <div className="grid lg:grid-cols-3 gap-4 mb-6">
+          {/* Market Status Card */}
+          <Card className="border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2 pt-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-blue-100 dark:bg-blue-900 rounded-md">
+                  <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Market Status</CardTitle>
+                  <CardDescription className="text-xs">Real-time hours</CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">🇺🇸 US</span>
-                  <Badge
-                    variant={marketStatus?.us?.isOpen ? "default" : "secondary"}
-                    className="text-sm px-3 py-1"
-                  >
-                    {marketStatus?.us?.isOpen ? "🟢 Open" : "🔴 Closed"}
-                  </Badge>
+            <CardContent className="pb-4">
+              <div className="space-y-2">
+                <div className="p-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-md border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-lg">🇺🇸</span>
+                      <span className="text-xs font-semibold">US Market</span>
+                    </div>
+                    <Badge
+                      variant={marketStatus?.us?.isOpen ? "default" : "secondary"}
+                      className={`text-xs px-2 py-0.5 ${marketStatus?.us?.isOpen ? "bg-green-500 hover:bg-green-600" : ""}`}
+                    >
+                      {marketStatus?.us?.isOpen ? "🟢 LIVE" : "⏸️ Closed"}
+                    </Badge>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-sm font-medium">🇮🇳 India</span>
-                  <Badge
-                    variant={marketStatus?.india?.isOpen ? "default" : "secondary"}
-                    className="text-sm px-3 py-1"
-                  >
-                    {marketStatus?.india?.isOpen ? "🟢 Open" : "🔴 Closed"}
-                  </Badge>
+                <div className="p-2 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950 dark:to-amber-950 rounded-md border border-orange-200 dark:border-orange-800">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-lg">🇮🇳</span>
+                      <span className="text-xs font-semibold">India Market</span>
+                    </div>
+                    <Badge
+                      variant={marketStatus?.india?.isOpen ? "default" : "secondary"}
+                      className={`text-xs px-2 py-0.5 ${marketStatus?.india?.isOpen ? "bg-green-500 hover:bg-green-600" : ""}`}
+                    >
+                      {marketStatus?.india?.isOpen ? "🟢 LIVE" : "⏸️ Closed"}
+                    </Badge>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Watchlist</CardTitle>
-              <CardDescription>Stocks being monitored</CardDescription>
+          {/* Watchlist Card */}
+          <Card className="border-l-4 border-l-purple-500 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3 pt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-purple-100 dark:bg-purple-900 rounded-md">
+                    <List className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Watchlist</CardTitle>
+                    <CardDescription className="text-xs">Monitored securities</CardDescription>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold bg-gradient-to-br from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    {STOCK_WATCHLIST.length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Total</p>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-bold">{STOCK_WATCHLIST.length}</div>
-              <p className="text-sm text-muted-foreground mt-2">Active stocks</p>
+            <CardContent className="pb-4">
+              <div className="space-y-2">
+                <div className="p-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-md border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base">🇺🇸</span>
+                      <span className="text-xs font-semibold">US Market</span>
+                    </div>
+                    <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                      {usStocks.length}
+                    </div>
+                  </div>
+                </div>
+                <div className="p-2 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 rounded-md border border-orange-200 dark:border-orange-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base">🇮🇳</span>
+                      <span className="text-xs font-semibold">India Market</span>
+                    </div>
+                    <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                      {indiaStocks.length}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-              <CardDescription>Calculate volatility stops and send alerts</CardDescription>
+          {/* Actions Card */}
+          <Card className="border-l-4 border-l-green-500 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2 pt-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-green-100 dark:bg-green-900 rounded-md">
+                  <Activity className="w-4 h-4 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Quick Actions</CardTitle>
+                  <CardDescription className="text-xs">Monitor & calculate</CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Badge
-                  variant={isCalculating || isRunning ? "default" : "secondary"}
-                  className="text-lg px-4 py-2"
-                >
-                  {isCalculating || isRunning ? "Processing..." : "Idle"}
-                </Badge>
+            <CardContent className="space-y-3 pb-4">
+              {/* Status Section */}
+              <div className="p-2 bg-muted/50 rounded-md">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-muted-foreground">Status</span>
+                  <Badge
+                    variant={isCalculating || isRunning ? "default" : "secondary"}
+                    className={`text-xs px-2 py-0.5 ${isCalculating || isRunning ? "bg-green-500 animate-pulse" : ""}`}
+                  >
+                    {isCalculating || isRunning ? "⚡ Processing" : "💤 Idle"}
+                  </Badge>
+                </div>
                 {lastRun && (
-                  <p className="text-xs text-muted-foreground mt-3">Last run: {lastRun}</p>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="w-3 h-3" />
+                    <span>Last: {lastRun}</span>
+                  </div>
                 )}
                 {volatilityData.size > 0 && (
-                  <p className="text-xs text-green-600 mt-2">
-                    ✓ {volatilityData.size} stocks calculated
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1.5 font-medium">
+                    ✓ {volatilityData.size} calculated
                   </p>
                 )}
               </div>
 
-              <div className="pt-2 space-y-2">
+              {/* Action Buttons */}
+              <div className="space-y-1.5">
                 <Button
                   onClick={calculateVolatilityStops}
                   disabled={isCalculating || isRunning}
-                  size="lg"
-                  className="w-full"
+                  size="sm"
+                  className="w-full font-semibold text-xs h-9"
                   variant="default"
                 >
-                  {isCalculating ? "Calculating..." : "Calculate Volatility Stops"}
+                  <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
+                  {isCalculating ? "Calculating..." : "Calculate Stops"}
                 </Button>
-                <Button
+                {/* <Button
                   onClick={runBatchJob}
                   disabled={isRunning || isCalculating}
-                  size="lg"
-                  className="w-full"
+                  size="sm"
+                  className="w-full font-semibold text-xs h-9"
                   variant="outline"
                 >
-                  {isRunning ? "Processing..." : "Run Full Batch Job"}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Calculate stops for all {STOCK_WATCHLIST.length} stocks or run full monitoring
+                  <Play className="w-3.5 h-3.5 mr-1.5" />
+                  {isRunning ? "Running..." : "Run Batch Job"}
+                </Button> */}
+                <p className="text-xs text-muted-foreground text-center pt-0.5">
+                  Monitor all {STOCK_WATCHLIST.length} stocks
                 </p>
               </div>
             </CardContent>
