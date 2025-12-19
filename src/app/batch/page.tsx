@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { STOCK_WATCHLIST, formatPrice } from "@/lib/constants";
 import { isAuthenticated } from "@/lib/auth";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   ArrowUpDown,
   ArrowUp,
@@ -28,6 +29,21 @@ import {
   Play,
   Clock,
 } from "lucide-react";
+
+interface StockPriceData {
+  price: number;
+  fetchedAt: Date;
+}
+
+interface Recommendation {
+  buy: number;
+  hold: number;
+  period: string;
+  sell: number;
+  strongBuy: number;
+  strongSell: number;
+  symbol: string;
+}
 
 type SortField =
   | "symbol"
@@ -63,6 +79,8 @@ export default function BatchJobPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [volatilityData, setVolatilityData] = useState<Map<string, VolatilityData>>(new Map());
   const [isCalculating, setIsCalculating] = useState(false);
+  const [stockPrices, setStockPrices] = useState<Map<string, StockPriceData>>(new Map());
+  const [recommendations, setRecommendations] = useState<Map<string, Recommendation>>(new Map());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -116,6 +134,95 @@ export default function BatchJobPage() {
       return <ArrowDown className="w-4 h-4 ml-1 inline" />;
     }
     return <ArrowUpDown className="w-4 h-4 ml-1 inline" />;
+  };
+
+  const getRecommendationBadge = (rec: Recommendation) => {
+    const total = rec.strongBuy + rec.buy + rec.hold + rec.sell + rec.strongSell;
+    const bullish = rec.strongBuy + rec.buy;
+    const percentage = (bullish / total) * 100;
+    const period = new Date(rec.period).toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
+
+    let badgeClass = "";
+    let badgeText = "";
+
+    if (percentage >= 70) {
+      badgeClass = "bg-green-600 text-white";
+      badgeText = "Strong Buy";
+    } else if (percentage >= 55) {
+      badgeClass = "bg-green-500 text-white";
+      badgeText = "Buy";
+    } else if (percentage >= 45) {
+      badgeClass = "bg-yellow-500 text-black";
+      badgeText = "Hold";
+    } else if (percentage >= 30) {
+      badgeClass = "bg-orange-500 text-white";
+      badgeText = "Sell";
+    } else {
+      badgeClass = "bg-red-600 text-white";
+      badgeText = "Strong Sell";
+    }
+
+    return (
+      <HoverCard>
+        <HoverCardTrigger asChild>
+          <Badge className={`${badgeClass} cursor-help`}>{badgeText}</Badge>
+        </HoverCardTrigger>
+        <HoverCardContent className="w-80">
+          <div className="space-y-2">
+            <h4 className="text-sm font-semibold">{period} Analyst Recommendations</h4>
+            <div className="text-xs text-muted-foreground">
+              {total} analysts covering this stock
+            </div>
+            <div className="space-y-1.5 pt-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-green-600"></span>
+                  Strong Buy
+                </span>
+                <span className="font-semibold">{rec.strongBuy}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                  Buy
+                </span>
+                <span className="font-semibold">{rec.buy}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+                  Hold
+                </span>
+                <span className="font-semibold">{rec.hold}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+                  Sell
+                </span>
+                <span className="font-semibold">{rec.sell}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-red-600"></span>
+                  Strong Sell
+                </span>
+                <span className="font-semibold">{rec.strongSell}</span>
+              </div>
+            </div>
+            <div className="pt-2 mt-2 border-t">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Bullish Sentiment</span>
+                <span className="font-bold text-lg">{percentage.toFixed(0)}%</span>
+              </div>
+            </div>
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+    );
   };
 
   const filterAndSortStocks = (stocks: typeof STOCK_WATCHLIST) => {
@@ -222,13 +329,24 @@ export default function BatchJobPage() {
 
       if (data.success) {
         const newVolatilityData = new Map<string, VolatilityData>();
+        const newPrices = new Map<string, StockPriceData>();
         data.results.forEach((result: any) => {
           if (result.success) {
             newVolatilityData.set(result.symbol, result);
+            // Store price data from volatility calculation
+            newPrices.set(result.symbol, {
+              price: result.currentPrice,
+              fetchedAt: new Date(),
+            });
           }
         });
         setVolatilityData(newVolatilityData);
+        setStockPrices(newPrices);
         setLastRun(new Date().toLocaleString());
+
+        // Fetch recommendations for US stocks
+        fetchRecommendations(STOCK_WATCHLIST.filter((s) => s.region === "US"));
+
         toast({
           title: "Volatility Calculation Complete! 🎉",
           description: `Processed ${data.totalSuccessful} of ${data.totalProcessed} stocks`,
@@ -245,6 +363,31 @@ export default function BatchJobPage() {
     } finally {
       setIsCalculating(false);
     }
+  };
+
+  const fetchRecommendations = async (stocks: typeof STOCK_WATCHLIST) => {
+    const newRecs = new Map<string, Recommendation>();
+
+    for (const stock of stocks) {
+      // Only fetch for US stocks (Finnhub supports US stocks)
+      if (stock.region === "US") {
+        try {
+          const response = await fetch(
+            `/api/stock/recommendations?symbol=${encodeURIComponent(stock.symbol)}`
+          );
+          const data = await response.json();
+
+          if (data.success && data.recommendations.length > 0) {
+            // Use the most recent recommendation
+            newRecs.set(stock.symbol, data.recommendations[0]);
+          }
+        } catch (error) {
+          console.error(`Failed to fetch recommendations for ${stock.symbol}:`, error);
+        }
+      }
+    }
+
+    setRecommendations(newRecs);
   };
 
   // const runBatchJob = async () => {
@@ -306,7 +449,6 @@ export default function BatchJobPage() {
                 </div>
                 <div>
                   <CardTitle className="text-base">Market Status</CardTitle>
-                  <CardDescription className="text-xs">Real-time hours</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -355,7 +497,6 @@ export default function BatchJobPage() {
                   </div>
                   <div>
                     <CardTitle className="text-base">Watchlist</CardTitle>
-                    <CardDescription className="text-xs">Monitored securities</CardDescription>
                   </div>
                 </div>
                 <div className="text-right">
@@ -403,7 +544,6 @@ export default function BatchJobPage() {
                 </div>
                 <div>
                   <CardTitle className="text-base">Quick Actions</CardTitle>
-                  <CardDescription className="text-xs">Monitor & calculate</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -502,7 +642,7 @@ export default function BatchJobPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>🇺🇸 US Stock Watchlist</CardTitle>
+            <CardTitle>🇺🇸 US Stocks</CardTitle>
             <CardDescription>
               US stocks being monitored for volatility stops ({filteredUsStocks.length} of{" "}
               {usStocks.length})
@@ -539,7 +679,7 @@ export default function BatchJobPage() {
                     <TableHead className="text-right">Current Price</TableHead>
                     <TableHead className="text-right">Volatility Stop</TableHead>
                     <TableHead className="text-right">Distance %</TableHead>
-                    <TableHead
+                    {/* <TableHead
                       className="text-right cursor-pointer hover:bg-muted"
                       onClick={() => handleSort("atrPeriod")}
                     >
@@ -550,7 +690,9 @@ export default function BatchJobPage() {
                       onClick={() => handleSort("atrMultiplier")}
                     >
                       Multiplier {getSortIcon("atrMultiplier")}
-                    </TableHead>
+                    </TableHead> */}
+                    <TableHead>Last Updated</TableHead>
+                    <TableHead>Analyst Rating</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -606,9 +748,25 @@ export default function BatchJobPage() {
                               <span className="text-muted-foreground">—</span>
                             )}
                           </TableCell>
-                          <TableCell className="text-right">{stock.atrPeriod || 14}</TableCell>
+                          {/* <TableCell className="text-right">{stock.atrPeriod || 14}</TableCell>
                           <TableCell className="text-right">
                             {stock.atrMultiplier || 2.0}x
+                          </TableCell> */}
+                          <TableCell>
+                            {stockPrices.has(stock.symbol) ? (
+                              <div className="text-xs text-muted-foreground">
+                                {stockPrices.get(stock.symbol)!.fetchedAt.toLocaleTimeString()}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {recommendations.has(stock.symbol) ? (
+                              getRecommendationBadge(recommendations.get(stock.symbol)!)
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
@@ -622,7 +780,7 @@ export default function BatchJobPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>🇮🇳 India Stock Watchlist</CardTitle>
+            <CardTitle>🇮🇳 India Stocks</CardTitle>
             <CardDescription>
               Indian stocks being monitored for volatility stops ({filteredIndiaStocks.length} of{" "}
               {indiaStocks.length})
@@ -648,18 +806,8 @@ export default function BatchJobPage() {
                     <TableHead className="text-right">Current Price</TableHead>
                     <TableHead className="text-right">Volatility Stop</TableHead>
                     <TableHead className="text-right">Distance %</TableHead>
-                    <TableHead
-                      className="text-right cursor-pointer hover:bg-muted"
-                      onClick={() => handleSort("atrPeriod")}
-                    >
-                      ATR Period {getSortIcon("atrPeriod")}
-                    </TableHead>
-                    <TableHead
-                      className="text-right cursor-pointer hover:bg-muted"
-                      onClick={() => handleSort("atrMultiplier")}
-                    >
-                      Multiplier {getSortIcon("atrMultiplier")}
-                    </TableHead>
+                    <TableHead>Last Updated</TableHead>
+                    <TableHead className="text-center">Call Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -715,9 +863,18 @@ export default function BatchJobPage() {
                               <span className="text-muted-foreground">—</span>
                             )}
                           </TableCell>
-                          <TableCell className="text-right">{stock.atrPeriod || 14}</TableCell>
+                          {/* <TableCell className="text-right">{stock.atrPeriod || 14}</TableCell>
                           <TableCell className="text-right">
                             {stock.atrMultiplier || 2.0}x
+                          </TableCell> */}
+                          <TableCell>
+                            {stockPrices.has(stock.symbol) ? (
+                              <div className="text-xs text-muted-foreground">
+                                {stockPrices.get(stock.symbol)!.fetchedAt.toLocaleTimeString()}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
