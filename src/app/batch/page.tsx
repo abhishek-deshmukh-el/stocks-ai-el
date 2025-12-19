@@ -108,6 +108,63 @@ export default function BatchJobPage() {
     return () => clearInterval(interval);
   }, [router]);
 
+  // Fetch stock prices on page load
+  useEffect(() => {
+    const fetchStockPrices = async () => {
+      const newPrices = new Map<string, StockPriceData>();
+
+      for (const stock of STOCK_WATCHLIST) {
+        try {
+          const response = await fetch(`/api/stock/price?symbol=${stock.symbol}`);
+          const data = await response.json();
+
+          if (data.success) {
+            newPrices.set(stock.symbol, {
+              price: data.price,
+              fetchedAt: new Date(data.fetchedAt),
+            });
+          }
+        } catch (error) {
+          console.error(`Failed to fetch price for ${stock.symbol}:`, error);
+        }
+      }
+
+      setStockPrices(newPrices);
+    };
+
+    fetchStockPrices();
+  }, []);
+
+  // Fetch analyst recommendations on page load
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      const newRecommendations = new Map<string, Recommendation>();
+
+      for (const stock of STOCK_WATCHLIST) {
+        // Only fetch for US stocks (Finnhub supports US stocks)
+        if (stock.region === "US") {
+          try {
+            const response = await fetch(
+              `/api/stock/recommendations?symbol=${encodeURIComponent(stock.symbol)}`
+            );
+            const data = await response.json();
+
+            if (data.success && data.recommendations && data.recommendations.length > 0) {
+              // Use the most recent recommendation (first item)
+              newRecommendations.set(stock.symbol, data.recommendations[0]);
+            }
+          } catch (error) {
+            console.error(`Failed to fetch recommendations for ${stock.symbol}:`, error);
+          }
+        }
+      }
+
+      setRecommendations(newRecommendations);
+    };
+
+    fetchRecommendations();
+  }, []);
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       // Cycle through: asc -> desc -> null
@@ -573,12 +630,12 @@ export default function BatchJobPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 flex justify-center">
                 <Button
                   onClick={calculateVolatilityStops}
                   disabled={isCalculating || isRunning}
                   size="sm"
-                  className="w-full font-semibold text-xs h-9"
+                  className="font-semibold text-xs h-9"
                   variant="default"
                 >
                   <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
@@ -594,9 +651,9 @@ export default function BatchJobPage() {
                   <Play className="w-3.5 h-3.5 mr-1.5" />
                   {isRunning ? "Running..." : "Run Batch Job"}
                 </Button> */}
-                <p className="text-xs text-muted-foreground text-center pt-0.5">
+                {/* <p className="text-xs text-muted-foreground text-center pt-0.5">
                   Monitor all {STOCK_WATCHLIST.length} stocks
-                </p>
+                </p> */}
               </div>
             </CardContent>
           </Card>
@@ -712,14 +769,16 @@ export default function BatchJobPage() {
                           <TableCell className="font-bold">{stock.symbol}</TableCell>
                           <TableCell>{stock.name}</TableCell>
                           <TableCell className="text-right">
-                            {vData ? (
+                            {stockPrices.has(stock.symbol) ? (
+                              <span className="font-semibold">
+                                {formatPrice(stockPrices.get(stock.symbol)!.price, stock.symbol)}
+                              </span>
+                            ) : vData ? (
                               <span className="font-semibold">
                                 {formatPrice(vData.currentPrice, stock.symbol)}
                               </span>
-                            ) : isCalculating ? (
-                              <span className="text-xs text-muted-foreground">Loading...</span>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-xs text-muted-foreground">Loading...</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
@@ -827,14 +886,16 @@ export default function BatchJobPage() {
                           <TableCell className="font-bold">{stock.symbol}</TableCell>
                           <TableCell>{stock.name}</TableCell>
                           <TableCell className="text-right">
-                            {vData ? (
+                            {stockPrices.has(stock.symbol) ? (
+                              <span className="font-semibold">
+                                {formatPrice(stockPrices.get(stock.symbol)!.price, stock.symbol)}
+                              </span>
+                            ) : vData ? (
                               <span className="font-semibold">
                                 {formatPrice(vData.currentPrice, stock.symbol)}
                               </span>
-                            ) : isCalculating ? (
-                              <span className="text-xs text-muted-foreground">Loading...</span>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-xs text-muted-foreground">Loading...</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
