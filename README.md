@@ -10,6 +10,7 @@ This is an **automated stock monitoring system** that:
 - Runs hourly batch jobs to calculate volatility stops using ATR (Average True Range)
 - Sends WhatsApp notifications when volatility thresholds are triggered
 - Provides a web dashboard for managing watchlists and monitoring batch jobs
+- **Advanced Volatility Stop Analysis** with historical data and trailing stops
 - **Requires authentication** - users must login with name and WhatsApp number
 
 ## 🔑 Authentication System
@@ -27,6 +28,7 @@ The app uses localStorage-based authentication:
 - `/batch` - Batch job monitoring dashboard
 - `/watchlist` - Manage stock watchlist (add/edit/delete)
 - `/stocks` - View stock lists and subscribe to alerts
+- `/volatility-stop` - **NEW** Advanced volatility stop analysis with historical data
 
 ## 📊 Core Features
 
@@ -49,6 +51,21 @@ The app uses localStorage-based authentication:
   - ATR multiplier (default: 2.0)
 - **Real-time Updates**: Changes reflect immediately in batch jobs
 
+### 3. Volatility Stop Analysis (NEW)
+
+- **Historical Data Fetching**: Get historical data with specific date ranges using Twelve Data API
+- **Dynamic Trailing Stops**: Calculate volatility-based stop losses that adjust with market conditions
+- **Trend Detection**: Identify UPTREND/DOWNTREND automatically
+- **Buy/Hold/Sell Signals**: Get actionable trading signals based on volatility
+- **Interactive Dashboard**: Visualize stop levels and trends over time
+- **Customizable Parameters**: Adjust ATR period and multiplier for your strategy
+
+**Access at**: `http://localhost:3000/volatility-stop`
+
+**API Endpoint**: `GET /api/stock/historical?symbol=AAPL&start_date=2025-01-01&end_date=2025-12-01`
+
+For detailed documentation, see [VOLATILITY_STOP_GUIDE.md](./VOLATILITY_STOP_GUIDE.md)
+
 ### 3. WhatsApp Notifications
 
 - **Twilio Integration**: Sends alerts via WhatsApp
@@ -58,10 +75,24 @@ The app uses localStorage-based authentication:
 
 ### 4. Stock Data Integration
 
-- **API Support**: Alpha Vantage and Finnhub
+- **Multi-Provider Support**:
+  - **NSE India**: Native integration using `stock-nse-india` package for Indian stocks
+  - **Alpha Vantage**: US stock data and fallback for global markets
+  - **Finnhub**: Alternative data provider with real-time quotes
+  - **Twelve Data**: Additional data source for comprehensive coverage
+- **NSE Features**:
+  - Real-time NSE stock prices
+  - Historical OHLC data with date ranges
+  - All NSE stock symbols listing
+  - Market indices (NIFTY 50, NIFTY BANK, etc.)
+  - Equity trade information (volume, statistics)
+  - Batch fetching with parallel requests
 - **Mock Data**: Development mode with fake data
 - **Real-time Prices**: Fetches current stock prices
 - **Historical Data**: Calculates ATR from price history
+- **Service Architecture**: Unified interface for all providers
+
+**📖 For detailed NSE integration documentation, see [NSE_INTEGRATION.md](./NSE_INTEGRATION.md)**
 
 ## 🏗️ Architecture
 
@@ -91,7 +122,13 @@ src/
 │   ├── volatility.ts     # ATR calculations
 │   ├── whatsapp.ts       # WhatsApp notifications
 │   ├── stock-api.ts      # Stock data fetching
-│   └── constants.ts      # Stock watchlist config
+│   ├── constants.ts      # Stock watchlist config
+│   └── services/         # Stock data service providers
+│       ├── stock-orchestrator.service.ts  # Central orchestration service
+│       ├── nse.service.ts              # NSE India (stock-nse-india)
+│       ├── alphavantage.service.ts     # Alpha Vantage API
+│       ├── finnhub.service.ts          # Finnhub API
+│       └── twelvedata.service.ts       # Twelve Data API
 └── components/ui/        # shadcn components
 ```
 

@@ -4,10 +4,9 @@
  */
 
 import { NseIndia } from "stock-nse-india";
-import { IStockService } from "./stock-service.interface";
-import { StockData } from "../volatility";
+import { StockData } from "../../volatility";
 
-export class NSEService implements IStockService {
+export class NSEService {
   private nseIndia: NseIndia;
 
   constructor() {
@@ -31,12 +30,8 @@ export class NSEService implements IStockService {
     const formattedSymbol = this.formatSymbol(symbol);
 
     try {
-      console.log(`🔍 [NSE] Fetching price for: ${formattedSymbol}`);
-
       // Fetch equity details using stock-nse-india
       const equityDetails = await this.nseIndia.getEquityDetails(formattedSymbol);
-
-      console.log(`📥 Response for ${formattedSymbol}:`, JSON.stringify(equityDetails, null, 2));
 
       // Extract the current price from priceInfo
       const price = equityDetails?.priceInfo?.lastPrice;
@@ -45,7 +40,6 @@ export class NSEService implements IStockService {
         throw new Error(`Invalid price received for ${formattedSymbol}: ${price}`);
       }
 
-      console.log(`✅ Successfully fetched ${formattedSymbol}, price: ₹${price}`);
       return price;
     } catch (error) {
       console.error(`❌ Failed to fetch ${formattedSymbol}:`, error);
@@ -59,26 +53,28 @@ export class NSEService implements IStockService {
     const formattedSymbol = this.formatSymbol(symbol);
 
     try {
-      console.log(`🔍 [NSE] Fetching historical data for: ${formattedSymbol}, days: ${days}`);
+      console.log(`🔍 [NSE] Attempting historical data for: ${formattedSymbol}, days: ${days}`);
 
       // Calculate date range
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
+      // const range = {
+      //   start: startDate,
+      //   end: endDate,
+      // };
+
+      // // Fetch historical data using stock-nse-india
+      // const historicalData = await this.nseIndia.getEquityHistoricalData(formattedSymbol, range);
+
       const range = {
-        start: startDate,
-        end: endDate,
+        start: new Date("2024-01-01"),
+        end: new Date("2024-01-31"),
       };
+      const historicalData = await this.nseIndia.getEquityHistoricalData("SULA", range);
 
-      // Fetch historical data using stock-nse-india
-      const historicalData = await this.nseIndia.getEquityHistoricalData(formattedSymbol, range);
-
-      console.log(
-        `📥 Historical data for ${formattedSymbol}:`,
-        historicalData?.length || 0,
-        "records"
-      );
+      console.log("🚀 ~ NSEService ~ fetchHistoricalData ~ historicalData:", historicalData);
 
       if (!historicalData || historicalData.length === 0) {
         throw new Error(`No historical data available for ${formattedSymbol}`);
@@ -96,36 +92,26 @@ export class NSEService implements IStockService {
         `✅ Successfully fetched ${stockData.length} historical records for ${formattedSymbol}`
       );
       return stockData;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`❌ Failed to fetch historical data for ${formattedSymbol}:`, error);
 
-      // Fallback: use current price if historical data fails
-      console.warn(`⚠️ Falling back to current price for ${formattedSymbol}`);
-      try {
-        const currentPrice = await this.fetchCurrentPrice(symbol);
-        const today = new Date();
-        const historicalData: StockData[] = [];
-
-        // Generate fallback data using current price
-        for (let i = days - 1; i >= 0; i--) {
-          const date = new Date(today);
-          date.setDate(date.getDate() - i);
-
-          historicalData.push({
-            date: date.toISOString().split("T")[0],
-            high: currentPrice * 1.02,
-            low: currentPrice * 0.98,
-            close: currentPrice,
-          });
-        }
-
-        console.log(`⚠️ Generated fallback historical data for ${formattedSymbol}`);
-        return historicalData;
-      } catch (fallbackError) {
-        throw new Error(
-          `Failed to fetch historical data for ${formattedSymbol}: ${error instanceof Error ? error.message : String(error)}`
-        );
+      // Print detailed error information
+      const err = error as any;
+      console.log("🔍 Error Details:");
+      console.log("  Status:", err.status);
+      console.log("  Code:", err.code);
+      console.log("  Message:", err.message);
+      if (err.response) {
+        console.log("  Response Status:", err.response.status);
+        console.log("  Response StatusText:", err.response.statusText);
+        console.log("  Response Headers:", err.response.headers);
+        console.log("  Response Data:", JSON.stringify(err.response.data, null, 2));
+        console.log("  Request Data:", JSON.stringify(err.request.data, null, 2));
       }
+
+      throw new Error(
+        `Failed to fetch historical data for ${formattedSymbol}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -230,3 +216,8 @@ export class NSEService implements IStockService {
     }
   }
 }
+
+/**
+ * Singleton instance of NSEService
+ */
+export const nseService = new NSEService();

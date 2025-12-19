@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { FinnhubService } from "@/lib/services/finnhub.service";
+import { stockOrchestrator } from "@/lib/services/stock-orchestrator.service";
 
 /**
  * API Route: Get Stock Recommendations
@@ -19,8 +19,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const finnhubService = new FinnhubService();
-    const recommendations = await finnhubService.fetchRecommendations(symbol);
+    const recommendations = await stockOrchestrator.fetchRecommendations(symbol);
 
     return NextResponse.json({
       success: true,

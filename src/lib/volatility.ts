@@ -6,6 +6,8 @@ export interface StockData {
   high: number;
   low: number;
   close: number;
+  open?: number;
+  volume?: number;
 }
 
 /**
@@ -117,4 +119,95 @@ export function generateSampleData(basePrice: number, days: number = 20): StockD
   }
 
   return data;
+}
+
+/**
+ * Calculate Volatility Stop with trailing stop logic
+ * This implements a dynamic trailing stop based on ATR
+ */
+export interface VolatilityStopResult {
+  date: string;
+  close: number;
+  atr: number;
+  stopLoss: number;
+  stopLossPercentage: number;
+  trend: "UP" | "DOWN";
+  signal: "HOLD" | "SELL" | "BUY";
+}
+
+export function calculateVolatilityStopTrailing(
+  data: StockData[],
+  atrPeriod: number = 14,
+  multiplier: number = 2.0
+): VolatilityStopResult[] {
+  if (data.length < atrPeriod + 1) {
+    throw new Error(`Need at least ${atrPeriod + 1} data points to calculate Volatility Stop`);
+  }
+
+  const results: VolatilityStopResult[] = [];
+  const atr = calculateATR(data, atrPeriod);
+
+  let previousStop = 0;
+  let trend: "UP" | "DOWN" = "UP";
+
+  for (let i = atrPeriod; i < data.length; i++) {
+    const currentPrice = data[i].close;
+
+    // Calculate stop levels
+    const stopUp = currentPrice - multiplier * atr;
+    const stopDown = currentPrice + multiplier * atr;
+
+    let stopLoss: number;
+
+    // Determine trend and stop loss
+    if (i === atrPeriod) {
+      // Initialize
+      stopLoss = stopUp;
+      trend = "UP";
+    } else {
+      if (trend === "UP") {
+        // Uptrend: stop loss rises with price
+        stopLoss = Math.max(previousStop, stopUp);
+        // Check for trend reversal
+        if (currentPrice < previousStop) {
+          trend = "DOWN";
+          stopLoss = stopDown;
+        }
+      } else {
+        // Downtrend: stop loss falls with price
+        stopLoss = Math.min(previousStop, stopDown);
+        // Check for trend reversal
+        if (currentPrice > previousStop) {
+          trend = "UP";
+          stopLoss = stopUp;
+        }
+      }
+    }
+
+    const stopLossPercentage = Math.abs(((currentPrice - stopLoss) / currentPrice) * 100);
+
+    // Determine signal
+    let signal: "HOLD" | "SELL" | "BUY";
+    if (trend === "UP" && currentPrice > stopLoss) {
+      signal = stopLossPercentage < 3 ? "BUY" : "HOLD";
+    } else if (trend === "DOWN" && currentPrice < stopLoss) {
+      signal = stopLossPercentage < 3 ? "SELL" : "HOLD";
+    } else {
+      signal = "HOLD";
+    }
+
+    results.push({
+      date: data[i].date,
+      close: Number(currentPrice.toFixed(2)),
+      atr: Number(atr.toFixed(2)),
+      stopLoss: Number(stopLoss.toFixed(2)),
+      stopLossPercentage: Number(stopLossPercentage.toFixed(2)),
+      trend,
+      signal,
+    });
+
+    previousStop = stopLoss;
+  }
+
+  return results;
 }

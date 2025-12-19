@@ -13,7 +13,7 @@ import {
 import { fetchCurrentPrice, fetchHistoricalData } from "./stock-api";
 import { calculateATR, calculateVolatilityStop, type VolatilityStop } from "./volatility";
 import { sendStockAlertWhatsApp } from "./whatsapp";
-import { isMarketOpen, getMarketStatus } from "./services/finnhub.service";
+import { isMarketOpen, getMarketStatus } from "./services/us/finnhub.service";
 
 interface StockAlert {
   stock: WatchlistStock;

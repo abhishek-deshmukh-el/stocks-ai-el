@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { fetchCurrentPrice, fetchHistoricalData } from "@/lib/stock-api";
 import { calculateATR, calculateVolatilityStop } from "@/lib/volatility";
 import { BATCH_CONFIG } from "@/lib/constants";
+import { stockOrchestrator } from "@/lib/services/stock-orchestrator.service";
 
 /**
  * API Route: Calculate Volatility Stop
@@ -23,10 +23,13 @@ export async function GET(request: Request) {
     console.log(`📊 Calculating volatility for ${symbol}`);
 
     // Fetch current price
-    const currentPrice = await fetchCurrentPrice(symbol);
+    const currentPrice = await stockOrchestrator.fetchCurrentPrice(symbol);
 
     // Fetch historical data
-    const historicalData = await fetchHistoricalData(symbol, BATCH_CONFIG.HISTORICAL_DAYS);
+    const historicalData = await stockOrchestrator.fetchHistoricalData(
+      symbol,
+      BATCH_CONFIG.HISTORICAL_DAYS
+    );
 
     // Calculate ATR
     const atr = calculateATR(historicalData, atrPeriod);
@@ -83,10 +86,13 @@ export async function POST(request: Request) {
         const { symbol, atrPeriod = 14, atrMultiplier = 2.0 } = stock;
 
         // Fetch current price
-        const currentPrice = await fetchCurrentPrice(symbol);
+        const currentPrice = await stockOrchestrator.fetchCurrentPrice(symbol);
 
         // Fetch historical data
-        const historicalData = await fetchHistoricalData(symbol, BATCH_CONFIG.HISTORICAL_DAYS);
+        const historicalData = await stockOrchestrator.fetchHistoricalData(
+          symbol,
+          BATCH_CONFIG.HISTORICAL_DAYS
+        );
 
         // Calculate ATR
         const atr = calculateATR(historicalData, atrPeriod);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchCurrentPrice } from "@/lib/stock-api";
+import { stockOrchestrator } from "@/lib/services/stock-orchestrator.service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Symbol is required" }, { status: 400 });
     }
 
-    const price = await fetchCurrentPrice(symbol);
+    const price = await stockOrchestrator.fetchCurrentPrice(symbol);
 
     return NextResponse.json({
       success: true,

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMarketStatus } from "@/lib/services/finnhub.service";
+import { getMarketStatus } from "@/lib/services/us/finnhub.service";
 
 /**
  * API Route: Get Market Status

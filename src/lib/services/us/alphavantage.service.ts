@@ -3,11 +3,10 @@
  * Implementation of stock data fetching using Alpha Vantage API
  */
 
-import { IStockService } from "./stock-service.interface";
-import { StockData } from "../volatility";
-import { API_CONFIG } from "../constants";
+import { StockData } from "../../volatility";
+import { API_CONFIG } from "../../constants";
 
-export class AlphaVantageService implements IStockService {
+export class AlphaVantageService {
   private apiKey: string;
 
   constructor() {
@@ -22,41 +21,25 @@ export class AlphaVantageService implements IStockService {
     return "Alpha Vantage";
   }
 
-  /**
-   * Convert Indian stock symbols to BSE format
-   */
-  private getSymbolVariant(symbol: string): string {
-    if (symbol.endsWith(".NS")) {
-      const baseName = symbol.replace(".NS", "");
-      const bseSymbol = `${baseName}.BSE`;
-      console.log(`🔄 Indian stock detected: ${symbol} - Using BSE variant: ${bseSymbol}`);
-      return bseSymbol;
-    }
-    console.log(`📊 Using symbol as-is: ${symbol}`);
-    return symbol;
-  }
-
   async fetchCurrentPrice(symbol: string): Promise<number> {
-    const variant = this.getSymbolVariant(symbol);
-
     try {
-      console.log(`🔍 [Alpha Vantage] Fetching price for: ${variant}`);
-      const url = `${API_CONFIG.ALPHA_VANTAGE.BASE_URL}?function=GLOBAL_QUOTE&symbol=${variant}&apikey=${this.apiKey}`;
+      console.log(`🔍 [Alpha Vantage] Fetching price for: ${symbol}`);
+      const url = `${API_CONFIG.ALPHA_VANTAGE.BASE_URL}?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${this.apiKey}`;
       console.log(`📡 Fetching URL: ${url}`);
 
       const response = await fetch(url);
       const data = await response.json();
-      console.log(`📥 Response for ${variant}:`, JSON.stringify(data, null, 2));
+      console.log(`📥 Response for ${symbol}:`, JSON.stringify(data, null, 2));
 
       // Check for API informational messages
       if (data["Information"]) {
-        console.warn(`ℹ️ API Information for ${variant}:`, data["Information"]);
+        console.warn(`ℹ️ API Information for ${symbol}:`, data["Information"]);
         throw new Error(`API limit or info: ${data["Information"]}`);
       }
 
       // Check for API error messages
       if (data["Error Message"]) {
-        console.warn(`⚠️ Alpha Vantage error for ${variant}:`, data["Error Message"]);
+        console.warn(`⚠️ Alpha Vantage error for ${symbol}:`, data["Error Message"]);
         throw new Error(`Alpha Vantage error: ${data["Error Message"]}`);
       }
 
@@ -67,38 +50,36 @@ export class AlphaVantageService implements IStockService {
 
       if (data["Global Quote"] && data["Global Quote"]["05. price"]) {
         const price = parseFloat(data["Global Quote"]["05. price"]);
-        console.log(`✅ Successfully fetched ${symbol} using variant: ${variant}, price: ${price}`);
+        console.log(`✅ Successfully fetched ${symbol}, price: ${price}`);
         return price;
       }
 
-      throw new Error(`No valid price data in response for ${variant}`);
+      throw new Error(`No valid price data in response for ${symbol}`);
     } catch (error) {
-      console.error(`❌ Failed to fetch ${variant}:`, error);
+      console.error(`❌ Failed to fetch ${symbol}:`, error);
       throw error;
     }
   }
 
   async fetchHistoricalData(symbol: string, days: number = 30): Promise<StockData[]> {
-    const variant = this.getSymbolVariant(symbol);
-
     try {
-      console.log(`🔍 [Alpha Vantage] Fetching historical data for: ${variant}`);
-      const url = `${API_CONFIG.ALPHA_VANTAGE.BASE_URL}?function=TIME_SERIES_DAILY&symbol=${variant}&outputsize=compact&apikey=${this.apiKey}`;
+      console.log(`🔍 [Alpha Vantage] Fetching historical data for: ${symbol}`);
+      const url = `${API_CONFIG.ALPHA_VANTAGE.BASE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=compact&apikey=${this.apiKey}`;
       console.log(`📡 Fetching URL: ${url}`);
 
       const response = await fetch(url);
       const data = await response.json();
-      console.log(`📥 Response for ${variant}:`, JSON.stringify(data, null, 2));
+      console.log(`📥 Response for ${symbol}:`, JSON.stringify(data, null, 2));
 
       // Check for API informational messages
       if (data["Information"]) {
-        console.warn(`ℹ️ API Information for ${variant}:`, data["Information"]);
+        console.warn(`ℹ️ API Information for ${symbol}:`, data["Information"]);
         throw new Error(`API limit or info: ${data["Information"]}`);
       }
 
       // Check for API error messages
       if (data["Error Message"]) {
-        console.warn(`⚠️ Alpha Vantage error for ${variant}:`, data["Error Message"]);
+        console.warn(`⚠️ Alpha Vantage error for ${symbol}:`, data["Error Message"]);
         throw new Error(`Alpha Vantage error: ${data["Error Message"]}`);
       }
 
@@ -111,7 +92,7 @@ export class AlphaVantageService implements IStockService {
         const timeSeries = data["Time Series (Daily)"];
         const stockData: StockData[] = [];
         const dateCount = Object.keys(timeSeries).length;
-        console.log(`📊 Found ${dateCount} days of data for ${variant}`);
+        console.log(`📊 Found ${dateCount} days of data for ${symbol}`);
 
         Object.keys(timeSeries)
           .slice(0, days)
@@ -126,15 +107,20 @@ export class AlphaVantageService implements IStockService {
           });
 
         console.log(
-          `✅ Successfully fetched ${stockData.length} days of historical data for ${symbol} using variant: ${variant}`
+          `✅ Successfully fetched ${stockData.length} days of historical data for ${symbol}`
         );
         return stockData.reverse();
       }
 
-      throw new Error(`No Time Series data in response for ${variant}`);
+      throw new Error(`No Time Series data in response for ${symbol}`);
     } catch (error) {
-      console.error(`❌ Failed to fetch historical data for ${variant}:`, error);
+      console.error(`❌ Failed to fetch historical data for ${symbol}:`, error);
       throw error;
     }
   }
 }
+
+/**
+ * Singleton instance of AlphaVantageService
+ */
+export const alphaVantageService = new AlphaVantageService();
