@@ -19,8 +19,28 @@ import { STOCK_WATCHLIST, formatPrice } from "@/lib/constants";
 import { isAuthenticated } from "@/lib/auth";
 import { ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
 
-type SortField = "symbol" | "name" | "targetPrice" | "atrPeriod" | "atrMultiplier";
+type SortField =
+  | "symbol"
+  | "name"
+  | "targetPrice"
+  | "atrPeriod"
+  | "atrMultiplier"
+  | "currentPrice"
+  | "stopLoss";
 type SortDirection = "asc" | "desc" | null;
+
+interface VolatilityData {
+  symbol: string;
+  currentPrice: number;
+  atr: number;
+  volatilityStop: {
+    stopLoss: number;
+    stopLossPercentage: number;
+    atr: number;
+    recommendation: string;
+  };
+  calculatedAt?: string;
+}
 
 export default function BatchJobPage() {
   const router = useRouter();
@@ -31,7 +51,8 @@ export default function BatchJobPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
-  const indianStocks = STOCK_WATCHLIST.filter((stock) => stock.region === "INDIA");
+  const [volatilityData, setVolatilityData] = useState<Map<string, VolatilityData>>(new Map());
+  const [isCalculating, setIsCalculating] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -87,8 +108,8 @@ export default function BatchJobPage() {
     return <ArrowUpDown className="w-4 h-4 ml-1 inline" />;
   };
 
-  const filteredAndSortedStocks = useMemo(() => {
-    let filtered = STOCK_WATCHLIST;
+  const filterAndSortStocks = (stocks: typeof STOCK_WATCHLIST) => {
+    let filtered = stocks;
 
     // Apply search filter
     if (searchQuery) {
@@ -122,7 +143,74 @@ export default function BatchJobPage() {
     }
 
     return filtered;
-  }, [searchQuery, sortField, sortDirection]);
+  };
+
+  const usStocks = useMemo(() => {
+    return STOCK_WATCHLIST.filter((stock) => stock.region === "US");
+  }, []);
+
+  const indiaStocks = useMemo(() => {
+    return STOCK_WATCHLIST.filter((stock) => stock.region === "INDIA");
+  }, []);
+
+  const filteredUsStocks = useMemo(() => {
+    return filterAndSortStocks(usStocks);
+  }, [usStocks, searchQuery, sortField, sortDirection]);
+
+  const filteredIndiaStocks = useMemo(() => {
+    return filterAndSortStocks(indiaStocks);
+  }, [indiaStocks, searchQuery, sortField, sortDirection]);
+
+  const calculateVolatilityStops = async () => {
+    setIsCalculating(true);
+    toast({
+      title: "Calculating Volatility Stops",
+      description: `Processing ${STOCK_WATCHLIST.length} stocks...`,
+    });
+
+    try {
+      const stocksToProcess = STOCK_WATCHLIST.map((stock) => ({
+        symbol: stock.symbol,
+        atrPeriod: stock.atrPeriod || 14,
+        atrMultiplier: stock.atrMultiplier || 2.0,
+      }));
+
+      const response = await fetch("/api/stock/volatility", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ stocks: stocksToProcess }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const newVolatilityData = new Map<string, VolatilityData>();
+        data.results.forEach((result: any) => {
+          if (result.success) {
+            newVolatilityData.set(result.symbol, result);
+          }
+        });
+        setVolatilityData(newVolatilityData);
+        setLastRun(new Date().toLocaleString());
+        toast({
+          title: "Volatility Calculation Complete! 🎉",
+          description: `Processed ${data.totalSuccessful} of ${data.totalProcessed} stocks`,
+        });
+      } else {
+        throw new Error(data.error || "Volatility calculation failed");
+      }
+    } catch (error) {
+      toast({
+        title: "Calculation Failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCalculating(false);
+    }
+  };
 
   const runBatchJob = async () => {
     setIsRunning(true);
@@ -182,7 +270,7 @@ export default function BatchJobPage() {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">🇺🇸 US (NYSE/NASDAQ)</span>
+                  <span className="text-sm font-medium">🇺🇸 US</span>
                   <Badge
                     variant={marketStatus?.us?.isOpen ? "default" : "secondary"}
                     className="text-sm px-3 py-1"
@@ -190,19 +278,9 @@ export default function BatchJobPage() {
                     {marketStatus?.us?.isOpen ? "🟢 Open" : "🔴 Closed"}
                   </Badge>
                 </div>
-                {marketStatus?.us?.holiday && (
-                  <p className="text-xs text-muted-foreground ml-6">
-                    Holiday: {marketStatus.us.holiday}
-                  </p>
-                )}
-                {marketStatus?.us?.session && marketStatus?.us?.isOpen && (
-                  <p className="text-xs text-muted-foreground ml-6">
-                    Session: {marketStatus.us.session}
-                  </p>
-                )}
 
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <span className="text-sm font-medium">🇮🇳 India (NSE/BSE)</span>
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-sm font-medium">🇮🇳 India</span>
                   <Badge
                     variant={marketStatus?.india?.isOpen ? "default" : "secondary"}
                     className="text-sm px-3 py-1"
@@ -210,16 +288,6 @@ export default function BatchJobPage() {
                     {marketStatus?.india?.isOpen ? "🟢 Open" : "🔴 Closed"}
                   </Badge>
                 </div>
-                {marketStatus?.india?.holiday && (
-                  <p className="text-xs text-muted-foreground ml-6">
-                    Holiday: {marketStatus.india.holiday}
-                  </p>
-                )}
-                {marketStatus?.india?.session && marketStatus?.india?.isOpen && (
-                  <p className="text-xs text-muted-foreground ml-6">
-                    Session: {marketStatus.india.session}
-                  </p>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -237,25 +305,48 @@ export default function BatchJobPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Batch Status</CardTitle>
-              <CardDescription>Trigger and monitor batch jobs</CardDescription>
+              <CardTitle>Actions</CardTitle>
+              <CardDescription>Calculate volatility stops and send alerts</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Badge variant={isRunning ? "default" : "secondary"} className="text-lg px-4 py-2">
-                  {isRunning ? "Running..." : "Idle"}
+                <Badge
+                  variant={isCalculating || isRunning ? "default" : "secondary"}
+                  className="text-lg px-4 py-2"
+                >
+                  {isCalculating || isRunning ? "Processing..." : "Idle"}
                 </Badge>
                 {lastRun && (
                   <p className="text-xs text-muted-foreground mt-3">Last run: {lastRun}</p>
                 )}
+                {volatilityData.size > 0 && (
+                  <p className="text-xs text-green-600 mt-2">
+                    ✓ {volatilityData.size} stocks calculated
+                  </p>
+                )}
               </div>
 
-              <div className="pt-2 border-t">
-                <Button onClick={runBatchJob} disabled={isRunning} size="lg" className="w-full">
-                  {isRunning ? "Processing..." : "Run Batch Job Now"}
+              <div className="pt-2 space-y-2">
+                <Button
+                  onClick={calculateVolatilityStops}
+                  disabled={isCalculating || isRunning}
+                  size="lg"
+                  className="w-full"
+                  variant="default"
+                >
+                  {isCalculating ? "Calculating..." : "Calculate Volatility Stops"}
                 </Button>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Fetches prices and calculates volatility for all {STOCK_WATCHLIST.length} stocks
+                <Button
+                  onClick={runBatchJob}
+                  disabled={isRunning || isCalculating}
+                  size="lg"
+                  className="w-full"
+                  variant="outline"
+                >
+                  {isRunning ? "Processing..." : "Run Full Batch Job"}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Calculate stops for all {STOCK_WATCHLIST.length} stocks or run full monitoring
                 </p>
               </div>
             </CardContent>
@@ -302,10 +393,10 @@ export default function BatchJobPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Stock Watchlist</CardTitle>
+            <CardTitle>🇺🇸 US Stock Watchlist</CardTitle>
             <CardDescription>
-              Stocks being monitored for volatility stops ({filteredAndSortedStocks.length} of{" "}
-              {STOCK_WATCHLIST.length})
+              US stocks being monitored for volatility stops ({filteredUsStocks.length} of{" "}
+              {usStocks.length})
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -336,12 +427,9 @@ export default function BatchJobPage() {
                     >
                       Name {getSortIcon("name")}
                     </TableHead>
-                    <TableHead
-                      className="text-right cursor-pointer hover:bg-muted"
-                      onClick={() => handleSort("targetPrice")}
-                    >
-                      Target Price {getSortIcon("targetPrice")}
-                    </TableHead>
+                    <TableHead className="text-right">Current Price</TableHead>
+                    <TableHead className="text-right">Volatility Stop</TableHead>
+                    <TableHead className="text-right">Distance %</TableHead>
                     <TableHead
                       className="text-right cursor-pointer hover:bg-muted"
                       onClick={() => handleSort("atrPeriod")}
@@ -357,24 +445,65 @@ export default function BatchJobPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAndSortedStocks.length === 0 ? (
+                  {filteredUsStocks.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        No stocks found matching &quot;{searchQuery}&quot;
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        {searchQuery
+                          ? `No US stocks found matching "${searchQuery}"`
+                          : "No US stocks in watchlist"}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredAndSortedStocks.map((stock) => (
-                      <TableRow key={stock.symbol}>
-                        <TableCell className="font-bold">{stock.symbol}</TableCell>
-                        <TableCell>{stock.name}</TableCell>
-                        <TableCell className="text-right">
-                          {stock.targetPrice ? formatPrice(stock.targetPrice, stock.symbol) : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">{stock.atrPeriod || 14}</TableCell>
-                        <TableCell className="text-right">{stock.atrMultiplier || 2.0}x</TableCell>
-                      </TableRow>
-                    ))
+                    filteredUsStocks.map((stock) => {
+                      const vData = volatilityData.get(stock.symbol);
+                      return (
+                        <TableRow key={stock.symbol}>
+                          <TableCell className="font-bold">{stock.symbol}</TableCell>
+                          <TableCell>{stock.name}</TableCell>
+                          <TableCell className="text-right">
+                            {vData ? (
+                              <span className="font-semibold">
+                                {formatPrice(vData.currentPrice, stock.symbol)}
+                              </span>
+                            ) : isCalculating ? (
+                              <span className="text-xs text-muted-foreground">Loading...</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {vData ? (
+                              <span className="text-red-600 font-semibold">
+                                {formatPrice(vData.volatilityStop.stopLoss, stock.symbol)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {vData ? (
+                              <Badge
+                                variant={
+                                  vData.volatilityStop.stopLossPercentage > 10
+                                    ? "default"
+                                    : vData.volatilityStop.stopLossPercentage > 5
+                                      ? "secondary"
+                                      : "destructive"
+                                }
+                              >
+                                {vData.volatilityStop.stopLossPercentage.toFixed(1)}%
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">{stock.atrPeriod || 14}</TableCell>
+                          <TableCell className="text-right">
+                            {stock.atrMultiplier || 2.0}x
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -382,11 +511,12 @@ export default function BatchJobPage() {
           </CardContent>
         </Card>
 
-        {/* <Card>
+        <Card>
           <CardHeader>
-            <CardTitle>Indian Stock Watchlist</CardTitle>
+            <CardTitle>🇮🇳 India Stock Watchlist</CardTitle>
             <CardDescription>
-              India-focused symbols monitored for volatility stops
+              Indian stocks being monitored for volatility stops ({filteredIndiaStocks.length} of{" "}
+              {indiaStocks.length})
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -394,34 +524,101 @@ export default function BatchJobPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Symbol</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead className="text-right">Target Price</TableHead>
-                    <TableHead className="text-right">ATR Period</TableHead>
-                    <TableHead className="text-right">Multiplier</TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted"
+                      onClick={() => handleSort("symbol")}
+                    >
+                      Symbol {getSortIcon("symbol")}
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted"
+                      onClick={() => handleSort("name")}
+                    >
+                      Name {getSortIcon("name")}
+                    </TableHead>
+                    <TableHead className="text-right">Current Price</TableHead>
+                    <TableHead className="text-right">Volatility Stop</TableHead>
+                    <TableHead className="text-right">Distance %</TableHead>
+                    <TableHead
+                      className="text-right cursor-pointer hover:bg-muted"
+                      onClick={() => handleSort("atrPeriod")}
+                    >
+                      ATR Period {getSortIcon("atrPeriod")}
+                    </TableHead>
+                    <TableHead
+                      className="text-right cursor-pointer hover:bg-muted"
+                      onClick={() => handleSort("atrMultiplier")}
+                    >
+                      Multiplier {getSortIcon("atrMultiplier")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {indianStocks.map((stock) => (
-                    <TableRow key={stock.symbol}>
-                      <TableCell className="font-bold">{stock.symbol}</TableCell>
-                      <TableCell>{stock.name}</TableCell>
-                      <TableCell className="text-right">
-                        {stock.targetPrice ? formatPrice(stock.targetPrice, stock.symbol) : "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {stock.atrPeriod || 14}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {stock.atrMultiplier || 2.0}x
+                  {filteredIndiaStocks.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        {searchQuery
+                          ? `No Indian stocks found matching "${searchQuery}"`
+                          : "No Indian stocks in watchlist"}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    filteredIndiaStocks.map((stock) => {
+                      const vData = volatilityData.get(stock.symbol);
+                      return (
+                        <TableRow key={stock.symbol}>
+                          <TableCell className="font-bold">{stock.symbol}</TableCell>
+                          <TableCell>{stock.name}</TableCell>
+                          <TableCell className="text-right">
+                            {vData ? (
+                              <span className="font-semibold">
+                                {formatPrice(vData.currentPrice, stock.symbol)}
+                              </span>
+                            ) : isCalculating ? (
+                              <span className="text-xs text-muted-foreground">Loading...</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {vData ? (
+                              <span className="text-red-600 font-semibold">
+                                {formatPrice(vData.volatilityStop.stopLoss, stock.symbol)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {vData ? (
+                              <Badge
+                                variant={
+                                  vData.volatilityStop.stopLossPercentage > 10
+                                    ? "default"
+                                    : vData.volatilityStop.stopLossPercentage > 5
+                                      ? "secondary"
+                                      : "destructive"
+                                }
+                              >
+                                {vData.volatilityStop.stopLossPercentage.toFixed(1)}%
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">{stock.atrPeriod || 14}</TableCell>
+                          <TableCell className="text-right">
+                            {stock.atrMultiplier || 2.0}x
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </div>
           </CardContent>
-        </Card> */}
+        </Card>
       </div>
     </div>
   );

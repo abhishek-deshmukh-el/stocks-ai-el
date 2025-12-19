@@ -12,11 +12,7 @@ import { API_CONFIG } from "../constants";
  */
 interface MarketStatus {
   exchange: string;
-  holiday: string | null;
   isOpen: boolean;
-  session: string | null;
-  timezone: string;
-  t: number;
 }
 
 export class FinnhubService implements IStockService {
@@ -26,10 +22,6 @@ export class FinnhubService implements IStockService {
     const apiKey = process.env.FINNHUB_API_KEY;
     if (!apiKey || apiKey === "your_api_key") {
       console.error("❌ FINNHUB_API_KEY environment variable is missing or not set properly");
-      console.error(
-        "📝 Please check your .env.local file and ensure FINNHUB_API_KEY is set to your actual API key"
-      );
-      console.error("🔑 Get your API key from: https://finnhub.io/register");
       throw new Error("FINNHUB_API_KEY is not configured. Please set it in your .env.local file.");
     }
     this.apiKey = apiKey;
@@ -262,31 +254,6 @@ export async function isMarketOpen(): Promise<boolean> {
     return false;
   }
 
-  if (status.isOpen) {
-    console.log(`🟢 US Market open - Session: ${status.session || "regular"}`);
-  } else {
-    console.log(`🔴 US Market closed${status.holiday ? ` - Holiday: ${status.holiday}` : ""}`);
-  }
-
-  return status.isOpen;
-}
-
-/**
- * Check if Indian stock market (NSE) is currently open using Finnhub API
- */
-export async function isIndianMarketOpen(): Promise<boolean> {
-  const status = await finnhubService.fetchMarketStatus("IN");
-
-  if (!status) {
-    return false;
-  }
-
-  if (status.isOpen) {
-    console.log(`🟢 Indian Market open - Session: ${status.session || "regular"}`);
-  } else {
-    console.log(`🔴 Indian Market closed${status.holiday ? ` - Holiday: ${status.holiday}` : ""}`);
-  }
-
   return status.isOpen;
 }
 
@@ -300,53 +267,33 @@ export async function getMarketStatusDetails(
 }
 
 /**
- * Get next US market open time (estimate based on current time)
+ * Get Indian market status based on time
+ * NSE market hours: 9:15 AM - 3:30 PM IST (Monday-Friday)
  */
-export function getNextMarketOpen(): Date {
-  const now = new Date();
-  const estTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-
-  const nextOpen = new Date(estTime);
-
-  // Set to next 9:30 AM
-  nextOpen.setHours(9, 30, 0, 0);
-
-  // If it's past market hours today, move to tomorrow
-  if (estTime.getHours() >= 16) {
-    nextOpen.setDate(nextOpen.getDate() + 1);
-  }
-
-  // Skip weekends
-  while (nextOpen.getDay() === 0 || nextOpen.getDay() === 6) {
-    nextOpen.setDate(nextOpen.getDate() + 1);
-  }
-
-  return nextOpen;
-}
-
-/**
- * Get next Indian market open time (estimate based on current time)
- */
-export function getNextIndianMarketOpen(): Date {
+export function getIndianMarketStatusByTime(): {
+  isOpen: boolean;
+} {
   const now = new Date();
   const istTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
 
-  const nextOpen = new Date(istTime);
+  const hour = istTime.getHours();
+  const minute = istTime.getMinutes();
+  const day = istTime.getDay();
 
-  // Set to next 9:15 AM IST
-  nextOpen.setHours(9, 15, 0, 0);
-
-  // If it's past market hours today, move to tomorrow
-  if (istTime.getHours() >= 15 && istTime.getMinutes() >= 30) {
-    nextOpen.setDate(nextOpen.getDate() + 1);
+  // Weekend check (0 = Sunday, 6 = Saturday)
+  if (day === 0 || day === 6) {
+    return {
+      isOpen: false,
+    };
   }
 
-  // Skip weekends
-  while (nextOpen.getDay() === 0 || nextOpen.getDay() === 6) {
-    nextOpen.setDate(nextOpen.getDate() + 1);
-  }
+  // Market hours: 9:15 AM to 3:30 PM IST
+  const isMarketHours =
+    (hour === 9 && minute >= 15) || (hour > 9 && hour < 15) || (hour === 15 && minute <= 30);
 
-  return nextOpen;
+  return {
+    isOpen: isMarketHours,
+  };
 }
 
 /**
@@ -355,30 +302,27 @@ export function getNextIndianMarketOpen(): Date {
 export async function getMarketStatus(): Promise<{
   us: {
     isOpen: boolean;
-    session?: string | null;
-    holiday?: string | null;
   };
   india: {
     isOpen: boolean;
-    session?: string | null;
-    holiday?: string | null;
   };
 }> {
-  const [usStatus, indiaStatus] = await Promise.all([
-    finnhubService.fetchMarketStatus("US"),
-    finnhubService.fetchMarketStatus("IN"),
-  ]);
+  // Get India status using time-based logic (no API call needed)
+  const indiaStatus = getIndianMarketStatusByTime();
+
+  // Try to get US status from Finnhub API, fallback to false on error
+  let usIsOpen = false;
+  try {
+    const usStatus = await finnhubService.fetchMarketStatus("US");
+    usIsOpen = usStatus?.isOpen || false;
+  } catch (error) {
+    console.error("Error fetching US market status:", error);
+  }
 
   return {
     us: {
-      isOpen: usStatus?.isOpen || false,
-      session: usStatus?.session,
-      holiday: usStatus?.holiday,
+      isOpen: usIsOpen,
     },
-    india: {
-      isOpen: indiaStatus?.isOpen || false,
-      session: indiaStatus?.session,
-      holiday: indiaStatus?.holiday,
-    },
+    india: indiaStatus,
   };
 }

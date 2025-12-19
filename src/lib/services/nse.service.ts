@@ -1,101 +1,30 @@
 /**
  * NSE (National Stock Exchange of India) Service
- * Implementation of stock data fetching using NSE API
+ * Implementation using stock-nse-india npm package
  */
 
+import { NseIndia } from "stock-nse-india";
 import { IStockService } from "./stock-service.interface";
 import { StockData } from "../volatility";
-import { API_CONFIG } from "../constants";
-
-interface NSEStockData {
-  company_name: string;
-  last_price: {
-    unit: string;
-    value: number;
-  };
-  day_high: {
-    unit: string;
-    value: number;
-  };
-  day_low: {
-    unit: string;
-    value: number;
-  };
-  open: {
-    unit: string;
-    value: number;
-  };
-  previous_close: {
-    unit: string;
-    value: number;
-  };
-  change: {
-    unit: string;
-    value: number;
-  };
-  percent_change: {
-    unit: string;
-    value: number;
-  };
-  volume: {
-    unit: string;
-    value: number;
-  };
-  year_high: {
-    unit: string;
-    value: number;
-  };
-  year_low: {
-    unit: string;
-    value: number;
-  };
-  market_cap: {
-    unit: string;
-    value: number;
-  };
-  pe_ratio: {
-    unit: string;
-    value: number;
-  };
-  sector: string;
-  industry: string;
-  last_update: string;
-  timestamp: string;
-}
-
-interface NSEStockResponse {
-  status: string;
-  symbol: string;
-  ticker: string;
-  exchange: string;
-  data: NSEStockData;
-}
-
-interface NSEBatchResponse {
-  status: string;
-  response_format: string;
-  data: {
-    [ticker: string]: NSEStockData;
-  };
-}
 
 export class NSEService implements IStockService {
+  private nseIndia: NseIndia;
+
+  constructor() {
+    this.nseIndia = new NseIndia();
+  }
+
   getName(): string {
-    return "NSE India";
+    return "NSE India (stock-nse-india)";
   }
 
   /**
    * Convert symbol to NSE format
-   * Supports both .NS (NSE) and .BO (BSE) suffixes
+   * Remove .NS or .BO suffixes as stock-nse-india expects raw symbols
    */
   private formatSymbol(symbol: string): string {
-    // If symbol already has .NS or .BO, use it as is
-    if (symbol.endsWith(".NS") || symbol.endsWith(".BO")) {
-      return symbol;
-    }
-
-    // Default to NSE
-    return `${symbol}.NS`;
+    // Remove .NS or .BO suffix if present
+    return symbol.replace(/\.(NS|BO)$/, "").toUpperCase();
   }
 
   async fetchCurrentPrice(symbol: string): Promise<number> {
@@ -103,35 +32,26 @@ export class NSEService implements IStockService {
 
     try {
       console.log(`🔍 [NSE] Fetching price for: ${formattedSymbol}`);
-      const url = `${API_CONFIG.NSE.BASE_URL}/stock?symbol=${formattedSymbol}`;
-      console.log(`📡 Fetching URL: ${url}`);
 
-      const response = await fetch(url);
+      // Fetch equity details using stock-nse-india
+      const equityDetails = await this.nseIndia.getEquityDetails(formattedSymbol);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      console.log(`📥 Response for ${formattedSymbol}:`, JSON.stringify(equityDetails, null, 2));
 
-      const data: NSEStockResponse = await response.json();
-      console.log(`📥 Response for ${formattedSymbol}:`, JSON.stringify(data, null, 2));
-
-      // Check response status
-      if (data.status !== "success") {
-        throw new Error(`NSE API error: Invalid status - ${data.status}`);
-      }
-
-      // Extract price
-      const price = data.data.last_price.value;
+      // Extract the current price from priceInfo
+      const price = equityDetails?.priceInfo?.lastPrice;
 
       if (!price || price <= 0) {
-        throw new Error(`Invalid price received: ${price}`);
+        throw new Error(`Invalid price received for ${formattedSymbol}: ${price}`);
       }
 
       console.log(`✅ Successfully fetched ${formattedSymbol}, price: ₹${price}`);
       return price;
     } catch (error) {
       console.error(`❌ Failed to fetch ${formattedSymbol}:`, error);
-      throw error;
+      throw new Error(
+        `Failed to fetch price for ${formattedSymbol}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -139,48 +59,80 @@ export class NSEService implements IStockService {
     const formattedSymbol = this.formatSymbol(symbol);
 
     try {
-      console.log(`🔍 [NSE] Fetching historical data for: ${formattedSymbol}`);
+      console.log(`🔍 [NSE] Fetching historical data for: ${formattedSymbol}, days: ${days}`);
 
-      // Note: The NSE API provided doesn't include historical data endpoint
-      // This is a limitation - we'll need to either:
-      // 1. Use a different API for historical data
-      // 2. Build historical data from current prices over time
-      // 3. Use Alpha Vantage as fallback for historical data
+      // Calculate date range
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
 
-      console.warn(
-        `⚠️ NSE API doesn't provide historical data endpoint. Using current price as fallback.`
+      const range = {
+        start: startDate,
+        end: endDate,
+      };
+
+      // Fetch historical data using stock-nse-india
+      const historicalData = await this.nseIndia.getEquityHistoricalData(formattedSymbol, range);
+
+      console.log(
+        `📥 Historical data for ${formattedSymbol}:`,
+        historicalData?.length || 0,
+        "records"
       );
 
-      // For now, return a single data point with current price
-      const currentPrice = await this.fetchCurrentPrice(symbol);
-      const today = new Date();
-
-      const historicalData: StockData[] = [];
-
-      // Generate mock historical data (in production, use a proper historical API)
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-
-        historicalData.push({
-          date: date.toISOString().split("T")[0],
-          high: currentPrice * 1.02,
-          low: currentPrice * 0.98,
-          close: currentPrice,
-        });
+      if (!historicalData || historicalData.length === 0) {
+        throw new Error(`No historical data available for ${formattedSymbol}`);
       }
 
-      console.log(`⚠️ Generated mock historical data for ${formattedSymbol}`);
-      return historicalData;
+      // Convert to StockData format
+      const stockData: StockData[] = historicalData.map((record: any) => ({
+        date: record.CH_TIMESTAMP || record.date,
+        high: parseFloat(record.CH_TRADE_HIGH_PRICE || record.high || record.CH_CLOSING_PRICE),
+        low: parseFloat(record.CH_TRADE_LOW_PRICE || record.low || record.CH_CLOSING_PRICE),
+        close: parseFloat(record.CH_CLOSING_PRICE || record.close),
+      }));
+
+      console.log(
+        `✅ Successfully fetched ${stockData.length} historical records for ${formattedSymbol}`
+      );
+      return stockData;
     } catch (error) {
       console.error(`❌ Failed to fetch historical data for ${formattedSymbol}:`, error);
-      throw error;
+
+      // Fallback: use current price if historical data fails
+      console.warn(`⚠️ Falling back to current price for ${formattedSymbol}`);
+      try {
+        const currentPrice = await this.fetchCurrentPrice(symbol);
+        const today = new Date();
+        const historicalData: StockData[] = [];
+
+        // Generate fallback data using current price
+        for (let i = days - 1; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+
+          historicalData.push({
+            date: date.toISOString().split("T")[0],
+            high: currentPrice * 1.02,
+            low: currentPrice * 0.98,
+            close: currentPrice,
+          });
+        }
+
+        console.log(`⚠️ Generated fallback historical data for ${formattedSymbol}`);
+        return historicalData;
+      } catch (fallbackError) {
+        throw new Error(
+          `Failed to fetch historical data for ${formattedSymbol}: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
     }
   }
 
   /**
    * Batch fetch multiple stocks in one API call
-   * This is much more efficient than fetching stocks individually
+   * Note: stock-nse-india doesn't have a native batch endpoint
+   * We'll fetch them individually but in parallel for better performance
    */
   async batchFetchPrices(symbols: string[]): Promise<Map<string, number>> {
     const prices = new Map<string, number>();
@@ -190,64 +142,91 @@ export class NSEService implements IStockService {
     }
 
     try {
-      // Format all symbols
-      const formattedSymbols = symbols.map((s) => this.formatSymbol(s));
-      const symbolsParam = formattedSymbols.join(",");
+      console.log(`🔍 [NSE] Batch fetching prices for ${symbols.length} symbols`);
 
-      console.log(`🔍 [NSE] Batch fetching prices for: ${formattedSymbols.join(", ")}`);
-      const url = `${API_CONFIG.NSE.BASE_URL}/stock/list?symbols=${symbolsParam}&res=val`;
-      console.log(`📡 Fetching URL: ${url}`);
+      // Fetch all symbols in parallel
+      const promises = symbols.map(async (symbol) => {
+        try {
+          const price = await this.fetchCurrentPrice(symbol);
+          return { symbol, price };
+        } catch (error) {
+          console.error(`❌ Failed to fetch ${symbol}:`, error);
+          return { symbol, price: 0 };
+        }
+      });
 
-      const response = await fetch(url);
+      const results = await Promise.all(promises);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: NSEBatchResponse = await response.json();
-      console.log(`📥 Batch response:`, JSON.stringify(data, null, 2));
-
-      // Check response status
-      if (data.status !== "success") {
-        throw new Error(`NSE API error: Invalid status - ${data.status}`);
-      }
-
-      // Extract prices from the response
-      for (const [ticker, stockData] of Object.entries(data.data)) {
-        const price = stockData.last_price.value;
-
-        if (price && price > 0) {
-          // Find the original symbol that matches this ticker
-          const originalSymbol = symbols.find((s) => {
-            const formatted = this.formatSymbol(s);
-            return formatted === ticker || formatted.startsWith(ticker.split(".")[0]);
-          });
-
-          if (originalSymbol) {
-            prices.set(originalSymbol, price);
-            console.log(`✅ ${ticker}: ₹${price}`);
-          }
+      // Build the map
+      for (const { symbol, price } of results) {
+        prices.set(symbol, price);
+        if (price > 0) {
+          console.log(`✅ ${symbol}: ₹${price}`);
         }
       }
 
-      console.log(`✅ Successfully fetched ${prices.size} stocks in batch`);
+      console.log(`✅ Successfully fetched ${prices.size} stocks in parallel batch`);
       return prices;
     } catch (error) {
       console.error(`❌ Failed to batch fetch prices:`, error);
+      throw new Error(
+        `Batch fetch failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
 
-      // Fallback to individual fetching if batch fails
-      console.log(`⚠️ Falling back to individual fetching...`);
-      for (const symbol of symbols) {
-        try {
-          const price = await this.fetchCurrentPrice(symbol);
-          prices.set(symbol, price);
-        } catch (err) {
-          console.error(`❌ Failed to fetch ${symbol}:`, err);
-          prices.set(symbol, 0);
-        }
-      }
+  /**
+   * Get all available NSE stock symbols
+   */
+  async getAllStockSymbols(): Promise<string[]> {
+    try {
+      console.log(`🔍 [NSE] Fetching all stock symbols`);
+      const symbols = await this.nseIndia.getAllStockSymbols();
+      console.log(`✅ Fetched ${symbols.length} stock symbols`);
+      return symbols;
+    } catch (error) {
+      console.error(`❌ Failed to fetch all stock symbols:`, error);
+      throw new Error(
+        `Failed to fetch stock symbols: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
 
-      return prices;
+  /**
+   * Get market indices
+   */
+  async getMarketIndices(): Promise<any> {
+    try {
+      console.log(`🔍 [NSE] Fetching market indices`);
+      // getEquityStockIndices requires an index parameter
+      // Common indices: "NIFTY 50", "NIFTY BANK", "NIFTY IT", etc.
+      const indices = await this.nseIndia.getEquityStockIndices("NIFTY 50");
+      console.log(`✅ Fetched market indices`);
+      return indices;
+    } catch (error) {
+      console.error(`❌ Failed to fetch market indices:`, error);
+      throw new Error(
+        `Failed to fetch indices: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  /**
+   * Get equity trade info (volume, trades, etc.)
+   */
+  async getEquityTradeInfo(symbol: string): Promise<any> {
+    const formattedSymbol = this.formatSymbol(symbol);
+
+    try {
+      console.log(`🔍 [NSE] Fetching trade info for: ${formattedSymbol}`);
+      const tradeInfo = await this.nseIndia.getEquityTradeInfo(formattedSymbol);
+      console.log(`✅ Fetched trade info for ${formattedSymbol}`);
+      return tradeInfo;
+    } catch (error) {
+      console.error(`❌ Failed to fetch trade info for ${formattedSymbol}:`, error);
+      throw new Error(
+        `Failed to fetch trade info: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }

@@ -24,6 +24,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "resend": "^6.6.0",
+    "stock-nse-india": "^1.2.2",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
     "twilio": "^5.10.7"
