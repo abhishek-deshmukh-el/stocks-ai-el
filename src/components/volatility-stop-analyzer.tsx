@@ -170,9 +170,11 @@ export default function VolatilityStopAnalyzer() {
             </div>
           </div>
 
-          <Button onClick={handleAnalyze} disabled={loading} className="w-full md:w-auto">
-            {loading ? "Analyzing..." : "Analyze Volatility Stop"}
-          </Button>
+          <div className="flex justify-center">
+            <Button onClick={handleAnalyze} disabled={loading}>
+              {loading ? "Analyzing..." : "Analyze Volatility Stop"}
+            </Button>
+          </div>
 
           {error && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-600">

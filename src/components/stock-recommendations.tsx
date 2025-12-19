@@ -78,7 +78,7 @@ export function StockRecommendations() {
         <CardDescription>View analyst buy/sell/hold recommendations for US stocks</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-col gap-2 mb-4">
           <Input
             placeholder="Enter stock symbol (e.g., TSLA)"
             value={symbol}
@@ -86,9 +86,11 @@ export function StockRecommendations() {
             onKeyDown={(e) => e.key === "Enter" && fetchRecommendations()}
             className="uppercase"
           />
-          <Button onClick={fetchRecommendations} disabled={loading}>
-            {loading ? "Loading..." : "Get Recommendations"}
-          </Button>
+          <div className="flex justify-center">
+            <Button onClick={fetchRecommendations} disabled={loading}>
+              {loading ? "Loading..." : "Get Recommendations"}
+            </Button>
+          </div>
         </div>
 
         {error && (

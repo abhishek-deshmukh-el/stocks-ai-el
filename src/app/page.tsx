@@ -168,7 +168,7 @@ export default function Home() {
         </div>
 
         {/* Main Actions */}
-        <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg sm:text-xl">🤖 Batch Monitor</CardTitle>
@@ -180,9 +180,11 @@ export default function Home() {
               <p className="text-sm text-muted-foreground mb-4">
                 Check hourly batch job status, view results, and manually trigger jobs
               </p>
-              <Button asChild className="w-full">
-                <Link href="/batch">Open Batch Monitor</Link>
-              </Button>
+              <div className="flex justify-center">
+                <Button asChild>
+                  <Link href="/batch">Open Batch Monitor</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -195,9 +197,30 @@ export default function Home() {
               <p className="text-sm text-muted-foreground mb-4">
                 Customize your stock watchlist with regional organization
               </p>
-              <Button asChild className="w-full" variant="secondary">
-                <Link href="/watchlist">Manage Watchlist</Link>
-              </Button>
+              <div className="flex justify-center">
+                <Button asChild variant="secondary">
+                  <Link href="/watchlist">Manage Watchlist</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl">📊 Volatility Stop</CardTitle>
+              <CardDescription className="text-sm">
+                Calculate volatility-based stop loss
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Analyze stock volatility and determine optimal stop-loss levels
+              </p>
+              <div className="flex justify-center">
+                <Button asChild variant="outline">
+                  <Link href="/volatility-stop">Volatility Analyzer</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
