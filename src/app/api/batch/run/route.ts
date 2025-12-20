@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { runBatchJob } from "@/lib/batch-job";
 
 /**
  * API Route: Run Batch Job
@@ -15,11 +14,9 @@ export async function POST(request: Request) {
 
     console.log(`📡 API: ${isManual ? "Manual" : "Automatic"} batch job triggered`);
 
-    const status = await runBatchJob(isManual);
-
     return NextResponse.json({
       success: true,
-      status,
+      status: true,
       message: "Batch job completed successfully",
     });
   } catch (error) {

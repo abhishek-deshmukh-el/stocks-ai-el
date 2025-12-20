@@ -109,7 +109,7 @@ export default function Home() {
                     <strong>US:</strong> {US_STOCKS.map((s) => s.symbol).join(", ")}
                   </span>
                   <span className="block">
-                    <strong>India:</strong> {INDIA_STOCKS.map((s) => s.symbol).join(", ")}
+                    <strong>India:</strong> {INDIA_STOCKS.map((s: any) => s.symbol).join(", ")}
                   </span>
                 </p>
                 <Button asChild className="w-full" variant="secondary">
