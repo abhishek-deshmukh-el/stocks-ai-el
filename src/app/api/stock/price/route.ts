@@ -5,12 +5,13 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const symbol = searchParams.get("symbol");
+    const region = (searchParams.get("region") as "US" | "INDIA") || "US";
 
     if (!symbol) {
       return NextResponse.json({ success: false, error: "Symbol is required" }, { status: 400 });
     }
 
-    const price = await stockOrchestrator.fetchCurrentPrice(symbol);
+    const price = await stockOrchestrator.fetchCurrentPrice(symbol, region);
 
     return NextResponse.json({
       success: true,

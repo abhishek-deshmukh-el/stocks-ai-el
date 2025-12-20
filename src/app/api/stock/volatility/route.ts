@@ -14,6 +14,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const symbol = searchParams.get("symbol");
+    const region = (searchParams.get("region") as "US" | "INDIA") || "US";
     const atrPeriod = parseInt(searchParams.get("atrPeriod") || "14");
     const atrMultiplier = parseFloat(searchParams.get("atrMultiplier") || "2.0");
 
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
     console.log(`📊 Calculating volatility for ${symbol}`);
 
     // Fetch current price
-    const currentPrice = await stockOrchestrator.fetchCurrentPrice(symbol);
+    const currentPrice = await stockOrchestrator.fetchCurrentPrice(symbol, region);
 
     // Fetch historical data
     const historicalData = await stockOrchestrator.fetchHistoricalData(
@@ -91,10 +92,10 @@ export async function POST(request: Request) {
 
     for (const stock of stocks) {
       try {
-        const { symbol, atrPeriod = 14, atrMultiplier = 2.0 } = stock;
+        const { symbol, region = "US", atrPeriod = 14, atrMultiplier = 2.0 } = stock;
 
         // Fetch current price
-        const currentPrice = await stockOrchestrator.fetchCurrentPrice(symbol);
+        const currentPrice = await stockOrchestrator.fetchCurrentPrice(symbol, region);
 
         // Fetch historical data
         const historicalData = await stockOrchestrator.fetchHistoricalData(

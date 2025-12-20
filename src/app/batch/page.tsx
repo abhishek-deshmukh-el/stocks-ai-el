@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { STOCK_WATCHLIST, formatPrice } from "@/lib/constants";
+import { STOCK_WATCHLIST, US_STOCKS, INDIA_STOCKS, formatPrice } from "@/lib/constants";
 import { isAuthenticated, getCurrentUser } from "@/lib/auth";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
@@ -115,7 +115,9 @@ export default function BatchJobPage() {
 
       for (const stock of STOCK_WATCHLIST) {
         try {
-          const response = await fetch(`/api/stock/price?symbol=${stock.symbol}`);
+          const response = await fetch(
+            `/api/stock/price?symbol=${stock.symbol}&region=${stock.region || "US"}`
+          );
           const data = await response.json();
 
           if (data.success) {
@@ -344,21 +346,13 @@ export default function BatchJobPage() {
     return filtered;
   };
 
-  const usStocks = useMemo(() => {
-    return STOCK_WATCHLIST.filter((stock) => stock.region === "US");
-  }, []);
-
-  const indiaStocks = useMemo(() => {
-    return STOCK_WATCHLIST.filter((stock) => stock.region === "INDIA");
-  }, []);
-
   const filteredUsStocks = useMemo(() => {
-    return filterAndSortStocks(usStocks);
-  }, [usStocks, searchQuery, sortField, sortDirection]);
+    return filterAndSortStocks(US_STOCKS);
+  }, [US_STOCKS, searchQuery, sortField, sortDirection]);
 
   const filteredIndiaStocks = useMemo(() => {
-    return filterAndSortStocks(indiaStocks);
-  }, [indiaStocks, searchQuery, sortField, sortDirection]);
+    return filterAndSortStocks(INDIA_STOCKS);
+  }, [INDIA_STOCKS, searchQuery, sortField, sortDirection]);
 
   const calculateVolatilityStops = async () => {
     setIsCalculating(true);
@@ -380,6 +374,7 @@ export default function BatchJobPage() {
 
       const stocksToProcess = STOCK_WATCHLIST.map((stock) => ({
         symbol: stock.symbol,
+        region: stock.region,
         atrPeriod: stock.atrPeriod || 14,
         atrMultiplier: stock.atrMultiplier || 2.0,
       }));
@@ -594,7 +589,7 @@ export default function BatchJobPage() {
                       <span className="text-xs font-semibold">US Market</span>
                     </div>
                     <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                      {usStocks.length}
+                      {US_STOCKS.length}
                     </div>
                   </div>
                 </div>
@@ -605,7 +600,7 @@ export default function BatchJobPage() {
                       <span className="text-xs font-semibold">India Market</span>
                     </div>
                     <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
-                      {indiaStocks.length}
+                      {INDIA_STOCKS.length}
                     </div>
                   </div>
                 </div>
@@ -723,7 +718,7 @@ export default function BatchJobPage() {
             <CardTitle>🇺🇸 US Stocks</CardTitle>
             <CardDescription>
               US stocks being monitored for volatility stops ({filteredUsStocks.length} of{" "}
-              {usStocks.length})
+              {US_STOCKS.length})
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -883,7 +878,7 @@ export default function BatchJobPage() {
             <CardTitle>🇮🇳 India Stocks</CardTitle>
             <CardDescription>
               Indian stocks being monitored for volatility stops ({filteredIndiaStocks.length} of{" "}
-              {indiaStocks.length})
+              {INDIA_STOCKS.length})
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -31,16 +31,25 @@ class StockOrchestrator {
   }
 
   /**
-   * Fetch current stock price from Finnhub (cached for 5 minutes)
+   * Fetch current stock price (cached for 5 minutes)
+   * @param symbol - The stock symbol
+   * @param region - The market region: "US" or "INDIA"
    */
-  async fetchCurrentPrice(symbol: string): Promise<number> {
-    const cached = this.priceCache.get(symbol);
+  async fetchCurrentPrice(symbol: string, region: "US" | "INDIA" = "US"): Promise<number> {
+    const cacheKey = `${symbol}_${region}`;
+    const cached = this.priceCache.get(cacheKey);
     if (cached && this.isCacheValid(cached.timestamp, this.CACHE_DURATIONS.PRICE)) {
       return cached.data;
     }
 
-    const price = await finnhubService.fetchCurrentPrice(symbol);
-    this.priceCache.set(symbol, { data: price, timestamp: Date.now() });
+    let price: number;
+    if (region === "INDIA") {
+      price = await nseService.fetchCurrentPrice(symbol);
+    } else {
+      price = await finnhubService.fetchCurrentPrice(symbol);
+    }
+
+    this.priceCache.set(cacheKey, { data: price, timestamp: Date.now() });
     return price;
   }
 

@@ -80,7 +80,10 @@ export default function WatchlistManagementPage() {
     const newPrices = new Map<string, StockPriceData>();
 
     try {
-      const stocksData = stocks.map((s) => ({ symbol: s.symbol, region: s.region }));
+      const stocksData = stocks.map((s) => ({
+        symbol: s.symbol,
+        region: s.region || "US",
+      }));
       const response = await fetch("/api/stock/price/batch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

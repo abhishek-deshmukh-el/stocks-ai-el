@@ -13,9 +13,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch all prices in parallel
-    const pricePromises = stocks.map(async (stock: { symbol: string; region: string }) => {
+    const pricePromises = stocks.map(async (stock: { symbol: string; region: "US" | "INDIA" }) => {
       try {
-        const price = await stockOrchestrator.fetchCurrentPrice(stock.symbol);
+        const price = await stockOrchestrator.fetchCurrentPrice(stock.symbol, stock.region || "US");
         return {
           symbol: stock.symbol,
           region: stock.region,
