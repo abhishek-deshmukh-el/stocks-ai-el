@@ -213,9 +213,6 @@ TWILIO_WHATSAPP_NUMBER=+14155238886  # Twilio sandbox number
 ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
 # OR
 FINNHUB_API_KEY=your_finnhub_key
-
-# Development Mode (uses mock data, no real API calls)
-DEV_MODE=true
 ```
 
 **Getting API Keys:**
@@ -470,12 +467,6 @@ User can edit/delete anytime
 - Configured in: `package.json` scripts
 - `yarn dev` starts on port 5001
 
-### Mock vs. Production Mode
-
-- **DEV_MODE=true**: Uses mock data, no API calls
-- **DEV_MODE=false**: Real API calls, real WhatsApp alerts
-- Toggle in `.env.local`
-
 ### Adding Stocks to Watchlist
 
 1. Edit `src/lib/constants.ts`
@@ -503,15 +494,13 @@ yarn dev
 ### "WhatsApp notifications not working"
 
 1. Check `.env.local` has correct Twilio credentials
-2. Verify `DEV_MODE=false` for real alerts
-3. Confirm WhatsApp number format: +1234567890
-4. Check Twilio sandbox is activated
+2. Confirm WhatsApp number format: +1234567890
+3. Check Twilio sandbox is activated
 
 ### "Stock data not loading"
 
 1. Verify API key in `.env.local`
 2. Check API rate limits (Alpha Vantage: 5 calls/min)
-3. Use `DEV_MODE=true` for testing with mock data
 
 ### "Authentication not persisting"
 
