@@ -18,35 +18,35 @@ export class TwelveDataService {
     this.apiKey = apiKey;
   }
 
-  async fetchCurrentPrice(symbol: string): Promise<number> {
-    try {
-      console.log(`🔍 [Twelve Data] Fetching price for: ${symbol}`);
-      const url = `${API_CONFIG.TWELVE_DATA.BASE_URL}/price?symbol=${symbol}&apikey=${this.apiKey}`;
-      console.log(`📡 Fetching URL: ${url}`);
+  // async fetchCurrentPrice(symbol: string): Promise<number> {
+  //   try {
+  //     console.log(`🔍 [Twelve Data] Fetching price for: ${symbol}`);
+  //     const url = `${API_CONFIG.TWELVE_DATA.BASE_URL}/price?symbol=${symbol}&apikey=${this.apiKey}`;
+  //     console.log(`📡 Fetching URL: ${url}`);
 
-      const response = await fetch(url);
-      const data = await response.json();
-      console.log(`📥 Response for ${symbol}:`, JSON.stringify(data, null, 2));
+  //     const response = await fetch(url);
+  //     const data = await response.json();
+  //     console.log(`📥 Response for ${symbol}:`, JSON.stringify(data, null, 2));
 
-      // Check for error
-      if (data.status === "error") {
-        console.warn(`⚠️ Twelve Data error for ${symbol}:`, data.message);
-        throw new Error(`Twelve Data error: ${data.message}`);
-      }
+  //     // Check for error
+  //     if (data.status === "error") {
+  //       console.warn(`⚠️ Twelve Data error for ${symbol}:`, data.message);
+  //       throw new Error(`Twelve Data error: ${data.message}`);
+  //     }
 
-      // Twelve Data returns price in 'price' field
-      if (data.price !== undefined) {
-        const price = parseFloat(data.price);
-        console.log(`✅ Successfully fetched ${symbol}, price: ${price}`);
-        return price;
-      }
+  //     // Twelve Data returns price in 'price' field
+  //     if (data.price !== undefined) {
+  //       const price = parseFloat(data.price);
+  //       console.log(`✅ Successfully fetched ${symbol}, price: ${price}`);
+  //       return price;
+  //     }
 
-      throw new Error(`No valid price data in response for ${symbol}`);
-    } catch (error) {
-      console.error(`❌ Failed to fetch ${symbol}:`, error);
-      throw error;
-    }
-  }
+  //     throw new Error(`No valid price data in response for ${symbol}`);
+  //   } catch (error) {
+  //     console.error(`❌ Failed to fetch ${symbol}:`, error);
+  //     throw error;
+  //   }
+  // }
 
   async fetchHistoricalData(symbol: string, days: number = 30): Promise<StockData[]> {
     try {

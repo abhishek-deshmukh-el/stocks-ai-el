@@ -171,11 +171,13 @@ export function calculateATR(data: StockData[], period: number = 14): number {
  * @param currentPrice Current stock price
  * @param atr Average True Range
  * @param multiplier ATR multiplier (default 2.0 for conservative, 3.0 for aggressive)
+ * @param forceSell Optional flag to force SELL recommendation (default false)
  */
 export function calculateVolatilityStop(
   currentPrice: number,
   atr: number,
-  multiplier: number = 2.0
+  multiplier: number = 2.0,
+  forceSell: boolean = false
 ): VolatilityStop {
   if (!Number.isFinite(currentPrice) || currentPrice <= 0) {
     throw new ValidationError(`Invalid current price: ${currentPrice}`);
@@ -192,7 +194,9 @@ export function calculateVolatilityStop(
 
   // Determine recommendation based on stop loss distance
   let recommendation: "HOLD" | "SELL" | "BUY";
-  if (stopLossPercentage > 10) {
+  if (forceSell) {
+    recommendation = "SELL"; // Forced sell recommendation
+  } else if (stopLossPercentage > 10) {
     recommendation = "SELL"; // High volatility, risky
   } else if (stopLossPercentage < 3) {
     recommendation = "BUY"; // Low volatility, stable
@@ -206,35 +210,6 @@ export function calculateVolatilityStop(
     stopLossPercentage,
     recommendation,
   };
-}
-
-/**
- * Generate sample stock data for demonstration
- */
-export function generateSampleData(basePrice: number, days: number = 20): StockData[] {
-  const data: StockData[] = [];
-  let price = basePrice;
-
-  for (let i = 0; i < days; i++) {
-    const volatility = price * 0.02; // 2% daily volatility
-    const change = (Math.random() - 0.5) * volatility;
-
-    price += change;
-    const high = price + Math.random() * volatility;
-    const low = price - Math.random() * volatility;
-
-    const date = new Date();
-    date.setDate(date.getDate() - (days - i - 1));
-
-    data.push({
-      date: date.toISOString().split("T")[0],
-      high: Number(high.toFixed(2)),
-      low: Number(low.toFixed(2)),
-      close: Number(price.toFixed(2)),
-    });
-  }
-
-  return data;
 }
 
 /**
@@ -291,35 +266,27 @@ export function calculateVolatilityStopTrailing(
         // Uptrend: stop loss rises with price but never falls
         stopLoss = Math.max(previousStop, stopUp);
 
-        // Check for bearish crossover: price crosses below stop
-        if (previousPrice >= previousStop && currentPrice < previousStop) {
-          // Bearish crossover detected
+        // Check for bearish crossover: price closes below stop
+        if (currentPrice < stopLoss) {
+          // Bearish crossover detected - price broke below trailing stop
           signal = "SELL";
           trend = "DOWN";
-          stopLoss = stopDown;
+          stopLoss = stopDown; // Switch to downtrend stop
         } else {
           trend = "UP";
-          // Bullish continuation: check if price is well above stop
-          if (currentPrice > stopLoss) {
-            signal = "BUY";
-          }
         }
       } else {
         // Downtrend: stop loss falls with price but never rises
         stopLoss = Math.min(previousStop, stopDown);
 
-        // Check for bullish crossover: price crosses above stop
-        if (previousPrice <= previousStop && currentPrice > previousStop) {
-          // Bullish crossover detected
+        // Check for bullish crossover: price closes above stop
+        if (currentPrice > stopLoss) {
+          // Bullish crossover detected - price broke above trailing stop
           signal = "BUY";
           trend = "UP";
-          stopLoss = stopUp;
+          stopLoss = stopUp; // Switch to uptrend stop
         } else {
           trend = "DOWN";
-          // Bearish continuation: check if price is well below stop
-          if (currentPrice < stopLoss) {
-            signal = "SELL";
-          }
         }
       }
     }

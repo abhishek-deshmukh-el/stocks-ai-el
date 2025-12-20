@@ -401,6 +401,14 @@ export default function BatchJobPage() {
         setStockPrices(newPrices);
         setLastRun(new Date().toLocaleString());
 
+        // Show alert notification if any were sent
+        if (data.alertsSent > 0) {
+          toast({
+            title: "SELL Alerts Sent",
+            description: `Sent WhatsApp notifications for ${data.alertsSent} SELL recommendation(s)`,
+          });
+        }
+
         // Fetch recommendations for US stocks
         fetchRecommendations(STOCK_WATCHLIST.filter((s) => s.region === "US"));
 
@@ -750,12 +758,13 @@ export default function BatchJobPage() {
                     </TableHead> */}
                     <TableHead>Last Updated</TableHead>
                     <TableHead>Analyst Rating</TableHead>
+                    <TableHead>Recommendation</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredUsStocks.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                         {searchQuery
                           ? `No US stocks found matching "${searchQuery}"`
                           : "No US stocks in watchlist"}
@@ -787,7 +796,7 @@ export default function BatchJobPage() {
                                 {formatPrice(vData.volatilityStop.stopLoss, stock.symbol)}
                               </span>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-muted-foreground text-center block">—</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
@@ -804,7 +813,7 @@ export default function BatchJobPage() {
                                 {vData.volatilityStop.stopLossPercentage.toFixed(1)}%
                               </Badge>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-muted-foreground text-center block">—</span>
                             )}
                           </TableCell>
                           {/* <TableCell className="text-right">{stock.atrPeriod || 14}</TableCell>
@@ -817,14 +826,33 @@ export default function BatchJobPage() {
                                 {stockPrices.get(stock.symbol)!.fetchedAt.toLocaleTimeString()}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-muted-foreground text-center block">—</span>
                             )}
                           </TableCell>
                           <TableCell>
                             {recommendations.has(stock.symbol) ? (
                               getRecommendationBadge(recommendations.get(stock.symbol)!)
                             ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
+                              <span className="text-xs text-muted-foreground text-center block">
+                                —
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {vData ? (
+                              <Badge
+                                className={
+                                  vData.volatilityStop.recommendation === "BUY"
+                                    ? "bg-green-600 text-white"
+                                    : vData.volatilityStop.recommendation === "SELL"
+                                      ? "bg-red-600 text-white"
+                                      : "bg-yellow-600 text-white"
+                                }
+                              >
+                                {vData.volatilityStop.recommendation}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-center block">—</span>
                             )}
                           </TableCell>
                         </TableRow>
@@ -866,7 +894,7 @@ export default function BatchJobPage() {
                     <TableHead className="text-right">Volatility Stop</TableHead>
                     <TableHead className="text-right">Distance %</TableHead>
                     <TableHead>Last Updated</TableHead>
-                    <TableHead className="text-center">Call Action</TableHead>
+                    <TableHead>Recommendation</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -904,7 +932,7 @@ export default function BatchJobPage() {
                                 {formatPrice(vData.volatilityStop.stopLoss, stock.symbol)}
                               </span>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-muted-foreground text-center block">—</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
@@ -921,7 +949,7 @@ export default function BatchJobPage() {
                                 {vData.volatilityStop.stopLossPercentage.toFixed(1)}%
                               </Badge>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-muted-foreground text-center block">—</span>
                             )}
                           </TableCell>
                           {/* <TableCell className="text-right">{stock.atrPeriod || 14}</TableCell>
@@ -934,7 +962,24 @@ export default function BatchJobPage() {
                                 {stockPrices.get(stock.symbol)!.fetchedAt.toLocaleTimeString()}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-muted-foreground text-center block">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {vData ? (
+                              <Badge
+                                className={
+                                  vData.volatilityStop.recommendation === "BUY"
+                                    ? "bg-green-600 text-white"
+                                    : vData.volatilityStop.recommendation === "SELL"
+                                      ? "bg-red-600 text-white"
+                                      : "bg-yellow-600 text-white"
+                                }
+                              >
+                                {vData.volatilityStop.recommendation}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-center block">—</span>
                             )}
                           </TableCell>
                         </TableRow>

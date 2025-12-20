@@ -374,7 +374,7 @@ export const BATCH_CONFIG = {
   DEFAULT_ATR_MULTIPLIER: 2.0,
 
   // Number of days of historical data to fetch
-  HISTORICAL_DAYS: 30,
+  HISTORICAL_DAYS: 90,
 
   // Volatility thresholds for alerts
   THRESHOLDS: {

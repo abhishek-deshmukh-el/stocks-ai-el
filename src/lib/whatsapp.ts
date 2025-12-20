@@ -15,16 +15,9 @@ interface WhatsAppOptions {
  */
 export async function sendWhatsApp(options: WhatsAppOptions): Promise<boolean> {
   try {
-    // This function should only run server-side
-    if (typeof window !== "undefined") {
-      console.error("sendWhatsApp should only be called server-side");
-      return false;
-    }
-
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
-    // Format phone number with whatsapp: prefix - hardcoded recipient
-    const formattedTo = "whatsapp:+918007916705";
+    const fromNumber = process.env.TWILIO_WHATSAPP_NUMBER;
 
     try {
       const { default: twilio } = await import("twilio");
@@ -34,13 +27,14 @@ export async function sendWhatsApp(options: WhatsAppOptions): Promise<boolean> {
 
       const messageConfig = {
         body: options.message,
-        from: "whatsapp:+14155238886",
-        to: formattedTo,
+        from: `whatsapp:${fromNumber}`,
+        to: `whatsapp:${options.to}`,
       };
 
-      // const message = await client.messages.create(messageConfig);
+      const message = await client.messages.create(messageConfig);
 
-      // console.log('✅ WhatsApp message sent! SID:', message.sid);
+      console.log("✅ WhatsApp message sent! SID:", message.sid);
+
       return true;
     } catch (twilioError: any) {
       // Check if it's a Twilio authentication error
@@ -92,10 +86,6 @@ ${
       ? "⚠️ *High volatility* - Wide stop, risky position"
       : "⚡ *Moderate volatility* - Standard risk level"
 }
-
-*Action:* Place your stop loss at ${currency}${stopLoss.toFixed(2)}
-
-⚠️ _Not financial advice. Trade responsibly._
   `.trim();
 
   return sendWhatsApp({
