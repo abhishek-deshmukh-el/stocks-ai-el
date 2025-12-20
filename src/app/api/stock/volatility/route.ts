@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { calculateATR, calculateVolatilityStop } from "@/lib/volatility";
-import { BATCH_CONFIG } from "@/lib/constants";
+import { BATCH_CONFIG, STOCK_WATCHLIST, formatPrice } from "@/lib/constants";
 import { stockOrchestrator } from "@/lib/services/stock-orchestrator.service";
+import { sendWhatsApp } from "@/lib/whatsapp";
 
 /**
  * API Route: Calculate Volatility Stop
@@ -67,11 +68,18 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { stocks } = body;
+    const { stocks, phoneNumber } = body;
 
     if (!stocks || !Array.isArray(stocks)) {
       return NextResponse.json(
         { success: false, error: "Stocks array is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!phoneNumber) {
+      return NextResponse.json(
+        { success: false, error: "Phone number is required" },
         { status: 400 }
       );
     }
@@ -125,6 +133,40 @@ export async function POST(request: Request) {
       }
     }
 
+    // Send WhatsApp alerts for SELL recommendations
+    const sellRecommendations = results.filter(
+      (result: any) => result.success && result.volatilityStop?.recommendation === "SELL"
+    );
+
+    let alertsSent = 0;
+    if (sellRecommendations.length > 0) {
+      console.log(
+        `🚨 Sending WhatsApp alerts for ${sellRecommendations.length} SELL recommendations`
+      );
+
+      for (const stock of sellRecommendations) {
+        try {
+          const stockInfo = STOCK_WATCHLIST.find((s) => s.symbol === stock.symbol);
+
+          // Ensure all values are defined
+          if (!stock.currentPrice || !stock.volatilityStop || !stock.atr) {
+            console.warn(`⚠️ Skipping ${stock.symbol}: missing data`);
+            continue;
+          }
+
+          // Send simple notification using sendWhatsApp
+          const simpleMessage = `🚨 SELL Alert\n\nSymbol: ${stock.symbol}\nName: ${stockInfo?.name || stock.symbol}\nCurrent Price: ${formatPrice(stock.currentPrice, stock.symbol)}\nVolatility Stop: ${formatPrice(stock.volatilityStop.stopLoss, stock.symbol)}\nDistance: ${stock.volatilityStop.stopLossPercentage.toFixed(1)}%\n\nRecommendation: SELL`;
+
+          await sendWhatsApp({ to: phoneNumber, message: simpleMessage });
+
+          alertsSent++;
+          console.log(`✅ WhatsApp alerts sent for ${stock.symbol}`);
+        } catch (error) {
+          console.error(`❌ Failed to send WhatsApp for ${stock.symbol}:`, error);
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       results,
@@ -132,6 +174,7 @@ export async function POST(request: Request) {
       totalProcessed: stocks.length,
       totalSuccessful: results.filter((r) => r.success).length,
       totalFailed: errors.length,
+      alertsSent,
       calculatedAt: new Date().toISOString(),
     });
   } catch (error) {

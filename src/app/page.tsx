@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,13 +10,11 @@ import Link from "next/link";
 import { isAuthenticated, getCurrentUser, logout } from "@/lib/auth";
 
 export default function Home() {
-  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const { toast } = useToast();
 
-  // Login form state
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
 

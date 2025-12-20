@@ -214,9 +214,6 @@ ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
 # OR
 FINNHUB_API_KEY=your_finnhub_key
 
-# Admin Contact
-ADMIN_PHONE=+1234567890  # Your WhatsApp number for alerts
-
 # Development Mode (uses mock data, no real API calls)
 DEV_MODE=true
 ```

@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { STOCK_WATCHLIST, formatPrice } from "@/lib/constants";
-import { isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, getCurrentUser } from "@/lib/auth";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   ArrowUpDown,
@@ -368,6 +368,16 @@ export default function BatchJobPage() {
     });
 
     try {
+      const user = getCurrentUser();
+      if (!user?.phoneNumber) {
+        toast({
+          title: "Error",
+          description: "User phone number not found. Please log in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const stocksToProcess = STOCK_WATCHLIST.map((stock) => ({
         symbol: stock.symbol,
         atrPeriod: stock.atrPeriod || 14,
@@ -379,7 +389,10 @@ export default function BatchJobPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ stocks: stocksToProcess }),
+        body: JSON.stringify({
+          stocks: stocksToProcess,
+          phoneNumber: user.phoneNumber,
+        }),
       });
 
       const data = await response.json();
