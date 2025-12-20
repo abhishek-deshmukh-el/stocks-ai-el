@@ -74,23 +74,32 @@ export default function WatchlistManagementPage() {
   const [editForm, setEditForm] = useState<WatchlistStock | null>(null);
 
   const fetchAllPrices = async (stocks: WatchlistStock[]) => {
+    if (stocks.length === 0) return;
+
     setFetchingPrices(true);
     const newPrices = new Map<string, StockPriceData>();
 
-    for (const stock of stocks) {
-      try {
-        const response = await fetch(`/api/stock/price?symbol=${encodeURIComponent(stock.symbol)}`);
-        const data = await response.json();
+    try {
+      const stocksData = stocks.map((s) => ({ symbol: s.symbol, region: s.region }));
+      const response = await fetch("/api/stock/price/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stocks: stocksData }),
+      });
+      const data = await response.json();
 
-        if (data.success && data.price) {
-          newPrices.set(stock.symbol, {
-            price: data.price,
-            fetchedAt: new Date(data.fetchedAt),
-          });
-        }
-      } catch (error) {
-        console.error(`Failed to fetch price for ${stock.symbol}:`, error);
+      if (data.success && data.results) {
+        data.results.forEach((result: any) => {
+          if (result.success && result.price) {
+            newPrices.set(result.symbol, {
+              price: result.price,
+              fetchedAt: new Date(result.fetchedAt),
+            });
+          }
+        });
       }
+    } catch (error) {
+      console.error("Failed to fetch batch prices:", error);
     }
 
     setStockPrices(newPrices);
@@ -98,25 +107,30 @@ export default function WatchlistManagementPage() {
   };
 
   const fetchRecommendations = async (stocks: WatchlistStock[]) => {
+    const usStocks = stocks.filter((s) => s.region === "US");
+    if (usStocks.length === 0) return;
+
     const newRecs = new Map<string, Recommendation>();
 
-    for (const stock of stocks) {
-      // Only fetch for US stocks (Finnhub supports US stocks)
-      if (stock.region === "US") {
-        try {
-          const response = await fetch(
-            `/api/stock/recommendations?symbol=${encodeURIComponent(stock.symbol)}`
-          );
-          const data = await response.json();
+    try {
+      const stocksData = usStocks.map((s) => ({ symbol: s.symbol, region: s.region }));
+      const response = await fetch("/api/stock/recommendations/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stocks: stocksData }),
+      });
+      const data = await response.json();
 
-          if (data.success && data.recommendations.length > 0) {
+      if (data.success && data.results) {
+        data.results.forEach((result: any) => {
+          if (result.success && result.recommendations.length > 0) {
             // Use the most recent recommendation
-            newRecs.set(stock.symbol, data.recommendations[0]);
+            newRecs.set(result.symbol, result.recommendations[0]);
           }
-        } catch (error) {
-          console.error(`Failed to fetch recommendations for ${stock.symbol}:`, error);
-        }
+        });
       }
+    } catch (error) {
+      console.error("Failed to fetch batch recommendations:", error);
     }
 
     setRecommendations(newRecs);
@@ -628,32 +642,62 @@ export default function WatchlistManagementPage() {
         </div>
 
         <div className="grid gap-6 mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Stats</CardTitle>
-              <CardDescription>Current watchlist overview</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-4 gap-4">
-                <div>
-                  <div className="text-3xl font-bold">{totalStocks}</div>
-                  <p className="text-sm text-muted-foreground">Total Stocks</p>
+          {/* Quick Stats - Modern Card Grid */}
+          <div className="grid md:grid-cols-3 gap-4">
+            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/20 border-purple-200 dark:border-purple-800">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1">
+                      Total Stocks
+                    </p>
+                    <div className="text-3xl font-bold text-purple-900 dark:text-purple-100">
+                      {totalStocks}
+                    </div>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-purple-200 dark:bg-purple-800 flex items-center justify-center">
+                    <span className="text-2xl">📊</span>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold">{usStocks.length}</div>
-                  <p className="text-sm text-muted-foreground">US Stocks</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200 dark:border-blue-800">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">
+                      US Stocks
+                    </p>
+                    <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+                      {usStocks.length}
+                    </div>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-blue-200 dark:bg-blue-800 flex items-center justify-center">
+                    <span className="text-2xl">🇺🇸</span>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold">{indiaStocks.length}</div>
-                  <p className="text-sm text-muted-foreground">India Stocks</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/20 border-orange-200 dark:border-orange-800">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-orange-600 dark:text-orange-400 mb-1">
+                      India Stocks
+                    </p>
+                    <div className="text-3xl font-bold text-orange-900 dark:text-orange-100">
+                      {indiaStocks.length}
+                    </div>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-orange-200 dark:bg-orange-800 flex items-center justify-center">
+                    <span className="text-2xl">🇮🇳</span>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold">{totalWithTargets}</div>
-                  <p className="text-sm text-muted-foreground">With Target Price</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
           {isAddingNew && (
             <Card>
@@ -753,10 +797,10 @@ export default function WatchlistManagementPage() {
           )}
 
           {/* US Stocks Section */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+          <Card className="border-l-4 border-l-blue-500">
+            <CardHeader className="flex flex-row items-center justify-between bg-blue-50 dark:bg-blue-950/20">
               <div>
-                <CardTitle>🇺🇸 US Stocks</CardTitle>
+                <CardTitle className="flex items-center gap-2">🇺🇸 US Stocks</CardTitle>
                 <CardDescription>
                   {usStocks.length} US stock{usStocks.length !== 1 ? "s" : ""} being monitored
                 </CardDescription>
@@ -784,10 +828,10 @@ export default function WatchlistManagementPage() {
           </Card>
 
           {/* India Stocks Section */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+          <Card className="border-l-4 border-l-orange-500">
+            <CardHeader className="flex flex-row items-center justify-between bg-orange-50 dark:bg-orange-950/20">
               <div>
-                <CardTitle>🇮🇳 India Stocks</CardTitle>
+                <CardTitle className="flex items-center gap-2">🇮🇳 India Stocks</CardTitle>
                 <CardDescription>
                   {indiaStocks.length} Indian stock{indiaStocks.length !== 1 ? "s" : ""} being
                   monitored

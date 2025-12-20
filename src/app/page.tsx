@@ -152,16 +152,7 @@ export default function Home() {
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
               Stock Monitoring Dashboard
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">Welcome back, {userName}!</p>
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="destructive"
-            size="sm"
-            className="w-full sm:w-auto"
-          >
-            Logout
-          </Button>
         </div>
 
         {/* Main Actions */}
