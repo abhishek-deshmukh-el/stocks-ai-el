@@ -27,10 +27,6 @@ export class FinnhubService {
     console.log("✅ FinnhubService initialized successfully");
   }
 
-  getName(): string {
-    return "Finnhub";
-  }
-
   async fetchCurrentPrice(symbol: string): Promise<number> {
     try {
       console.log(`🔍 [Finnhub] Fetching price for: ${symbol}`);
@@ -163,23 +159,6 @@ export class FinnhubService {
       return null;
     }
   }
-}
-
-/**
- * Market Hours Utility Functions
- */
-
-/**
- * Check if US stock market is currently open using Finnhub API
- */
-export async function isMarketOpen(): Promise<boolean> {
-  const status = await finnhubService.fetchMarketStatus("US");
-
-  if (!status) {
-    return false;
-  }
-
-  return status.isOpen;
 }
 
 /**

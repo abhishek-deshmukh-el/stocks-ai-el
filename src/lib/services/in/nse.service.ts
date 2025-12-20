@@ -13,10 +13,6 @@ export class NSEService {
     this.nseIndia = new NseIndia();
   }
 
-  getName(): string {
-    return "NSE India (stock-nse-india)";
-  }
-
   /**
    * Convert symbol to NSE format
    * Remove .NS or .BO suffixes as stock-nse-india expects raw symbols
@@ -72,7 +68,7 @@ export class NSEService {
         start: new Date("2024-01-01"),
         end: new Date("2024-01-31"),
       };
-      const historicalData = await this.nseIndia.getEquityHistoricalData("SULA", range);
+      const historicalData = await this.nseIndia.getEquityHistoricalData("IRCTC", range);
 
       console.log("🚀 ~ NSEService ~ fetchHistoricalData ~ historicalData:", historicalData);
 
@@ -162,58 +158,18 @@ export class NSEService {
   }
 
   /**
-   * Get all available NSE stock symbols
+   * Fetch stock recommendations for Indian stocks
+   * Note: NSE API doesn't provide analyst recommendations like Finnhub
+   * Returns empty array as recommendations are not available
    */
-  async getAllStockSymbols(): Promise<string[]> {
-    try {
-      console.log(`🔍 [NSE] Fetching all stock symbols`);
-      const symbols = await this.nseIndia.getAllStockSymbols();
-      console.log(`✅ Fetched ${symbols.length} stock symbols`);
-      return symbols;
-    } catch (error) {
-      console.error(`❌ Failed to fetch all stock symbols:`, error);
-      throw new Error(
-        `Failed to fetch stock symbols: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  /**
-   * Get market indices
-   */
-  async getMarketIndices(): Promise<any> {
-    try {
-      console.log(`🔍 [NSE] Fetching market indices`);
-      // getEquityStockIndices requires an index parameter
-      // Common indices: "NIFTY 50", "NIFTY BANK", "NIFTY IT", etc.
-      const indices = await this.nseIndia.getEquityStockIndices("NIFTY 50");
-      console.log(`✅ Fetched market indices`);
-      return indices;
-    } catch (error) {
-      console.error(`❌ Failed to fetch market indices:`, error);
-      throw new Error(
-        `Failed to fetch indices: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  /**
-   * Get equity trade info (volume, trades, etc.)
-   */
-  async getEquityTradeInfo(symbol: string): Promise<any> {
+  async fetchRecommendations(symbol: string): Promise<any[]> {
     const formattedSymbol = this.formatSymbol(symbol);
-
-    try {
-      console.log(`🔍 [NSE] Fetching trade info for: ${formattedSymbol}`);
-      const tradeInfo = await this.nseIndia.getEquityTradeInfo(formattedSymbol);
-      console.log(`✅ Fetched trade info for ${formattedSymbol}`);
-      return tradeInfo;
-    } catch (error) {
-      console.error(`❌ Failed to fetch trade info for ${formattedSymbol}:`, error);
-      throw new Error(
-        `Failed to fetch trade info: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
+    console.log(
+      `ℹ️ [NSE] Analyst recommendations not available for Indian stocks: ${formattedSymbol}`
+    );
+    // NSE API doesn't provide analyst recommendations
+    // This method exists for API consistency
+    return [];
   }
 }
 

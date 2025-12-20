@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const symbol = searchParams.get("symbol");
+    const region = searchParams.get("region") as "US" | "INDIA";
 
     if (!symbol) {
       return NextResponse.json(
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const recommendations = await stockOrchestrator.fetchRecommendations(symbol);
+    const recommendations = await stockOrchestrator.fetchRecommendations(symbol, region);
 
     return NextResponse.json({
       success: true,

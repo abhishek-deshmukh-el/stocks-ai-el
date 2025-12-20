@@ -116,7 +116,7 @@ export default function BatchJobPage() {
       for (const stock of STOCK_WATCHLIST) {
         try {
           const response = await fetch(
-            `/api/stock/price?symbol=${stock.symbol}&region=${stock.region || "US"}`
+            `/api/stock/price?symbol=${stock.symbol}&region=${stock.region}`
           );
           const data = await response.json();
 
@@ -147,7 +147,7 @@ export default function BatchJobPage() {
         if (stock.region === "US") {
           try {
             const response = await fetch(
-              `/api/stock/recommendations?symbol=${encodeURIComponent(stock.symbol)}`
+              `/api/stock/recommendations?symbol=${encodeURIComponent(stock.symbol)}&region=${stock.region}`
             );
             const data = await response.json();
 
@@ -446,7 +446,7 @@ export default function BatchJobPage() {
       if (stock.region === "US") {
         try {
           const response = await fetch(
-            `/api/stock/recommendations?symbol=${encodeURIComponent(stock.symbol)}`
+            `/api/stock/recommendations?symbol=${encodeURIComponent(stock.symbol)}&region=${stock.region}`
           );
           const data = await response.json();
 

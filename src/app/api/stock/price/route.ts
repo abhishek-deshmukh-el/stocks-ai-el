@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const symbol = searchParams.get("symbol");
-    const region = (searchParams.get("region") as "US" | "INDIA") || "US";
+    const region = searchParams.get("region") as "US" | "INDIA";
 
     if (!symbol) {
       return NextResponse.json({ success: false, error: "Symbol is required" }, { status: 400 });

@@ -9,6 +9,7 @@ import { finnhubService } from "./us/finnhub.service";
 import { twelveDataService } from "./us/twelvedata.service";
 import { nseService } from "./in/nse.service";
 import { StockData } from "../volatility";
+import { yahooFinanceService } from "./in/yahoo-finance.service";
 
 interface CacheEntry<T> {
   data: T;
@@ -21,9 +22,9 @@ class StockOrchestrator {
   private recommendationsCache = new Map<string, CacheEntry<any[]>>();
 
   private readonly CACHE_DURATIONS = {
-    PRICE: 5 * 60 * 1000, // 5 minutes
-    HISTORICAL: 60 * 60 * 1000, // 1 hour
-    RECOMMENDATIONS: 60 * 60 * 1000, // 1 hour
+    PRICE: 6 * 60 * 60 * 1000, // 6 hours
+    HISTORICAL: 6 * 60 * 60 * 1000, // 6 hours
+    RECOMMENDATIONS: 6 * 60 * 60 * 1000, // 6 hours
   };
 
   private isCacheValid(timestamp: number, duration: number): boolean {
@@ -54,31 +55,55 @@ class StockOrchestrator {
   }
 
   /**
-   * Fetch historical stock data from TwelveData (cached for 1 hour)
+   * Fetch historical stock data (cached for 1 hour)
+   * @param symbol - The stock symbol
+   * @param days - Number of days of historical data
+   * @param region - The market region: "US" or "INDIA"
    */
-  async fetchHistoricalData(symbol: string, days: number = 30): Promise<StockData[]> {
-    const cacheKey = `${symbol}_${days}`;
+  async fetchHistoricalData(
+    symbol: string,
+    days: number = 60,
+    region: "US" | "INDIA"
+  ): Promise<StockData[]> {
+    const cacheKey = `${symbol}_${days}_${region}`;
     const cached = this.historicalCache.get(cacheKey);
     if (cached && this.isCacheValid(cached.timestamp, this.CACHE_DURATIONS.HISTORICAL)) {
       return cached.data;
     }
 
-    const data = await twelveDataService.fetchHistoricalData(symbol, days);
+    let data: StockData[];
+    if (region === "INDIA") {
+      data = await yahooFinanceService.fetchHistoricalData(symbol, days);
+    } else {
+      data = await twelveDataService.fetchHistoricalData(symbol, days);
+    }
+
     this.historicalCache.set(cacheKey, { data, timestamp: Date.now() });
     return data;
   }
 
   /**
-   * Fetch stock recommendations from Finnhub (cached for 1 hour)
+   * Fetch stock recommendations (cached for 1 hour)
+   * @param symbol - The stock symbol
+   * @param region - The market region: "US" or "INDIA"
+   * Note: Recommendations are only available for US stocks via Finnhub
    */
-  async fetchRecommendations(symbol: string): Promise<any[]> {
-    const cached = this.recommendationsCache.get(symbol);
+  async fetchRecommendations(symbol: string, region: "US" | "INDIA" = "US"): Promise<any[]> {
+    const cacheKey = `${symbol}_${region}`;
+    const cached = this.recommendationsCache.get(cacheKey);
     if (cached && this.isCacheValid(cached.timestamp, this.CACHE_DURATIONS.RECOMMENDATIONS)) {
       return cached.data;
     }
 
-    const recommendations = await finnhubService.fetchRecommendations(symbol);
-    this.recommendationsCache.set(symbol, { data: recommendations, timestamp: Date.now() });
+    // Recommendations only available for US stocks
+    let recommendations: any[];
+    if (region === "INDIA") {
+      recommendations = await nseService.fetchRecommendations(symbol);
+    } else {
+      recommendations = await finnhubService.fetchRecommendations(symbol);
+    }
+
+    this.recommendationsCache.set(cacheKey, { data: recommendations, timestamp: Date.now() });
     return recommendations;
   }
 }

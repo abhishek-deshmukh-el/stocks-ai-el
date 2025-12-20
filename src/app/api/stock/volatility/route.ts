@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const symbol = searchParams.get("symbol");
-    const region = (searchParams.get("region") as "US" | "INDIA") || "US";
+    const region = searchParams.get("region") as "US" | "INDIA";
     const atrPeriod = parseInt(searchParams.get("atrPeriod") || "14");
     const atrMultiplier = parseFloat(searchParams.get("atrMultiplier") || "2.0");
 
@@ -30,7 +30,8 @@ export async function GET(request: Request) {
     // Fetch historical data
     const historicalData = await stockOrchestrator.fetchHistoricalData(
       symbol,
-      BATCH_CONFIG.HISTORICAL_DAYS
+      BATCH_CONFIG.HISTORICAL_DAYS,
+      region
     );
 
     // Calculate ATR
@@ -100,7 +101,8 @@ export async function POST(request: Request) {
         // Fetch historical data
         const historicalData = await stockOrchestrator.fetchHistoricalData(
           symbol,
-          BATCH_CONFIG.HISTORICAL_DAYS
+          BATCH_CONFIG.HISTORICAL_DAYS,
+          region
         );
 
         // Calculate ATR

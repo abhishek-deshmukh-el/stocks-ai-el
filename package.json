@@ -28,7 +28,8 @@
     "stock-nse-india": "^1.2.2",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
-    "twilio": "^5.10.7"
+    "twilio": "^5.10.7",
+    "yahoo-finance2": "^3.10.2"
   },
   "devDependencies": {
     "@types/node": "^20",

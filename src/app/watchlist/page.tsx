@@ -82,7 +82,7 @@ export default function WatchlistManagementPage() {
     try {
       const stocksData = stocks.map((s) => ({
         symbol: s.symbol,
-        region: s.region || "US",
+        region: s.region,
       }));
       const response = await fetch("/api/stock/price/batch", {
         method: "POST",
@@ -239,7 +239,7 @@ export default function WatchlistManagementPage() {
   const handleSaveEdit = () => {
     if (!editForm) return;
 
-    const region = editForm.region || "US";
+    const region = editForm.region;
     if (region === "US") {
       setUsStocks(usStocks.map((s) => (s.symbol === editingId ? editForm : s)));
     } else {
