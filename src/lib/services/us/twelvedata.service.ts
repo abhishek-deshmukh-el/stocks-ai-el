@@ -9,6 +9,9 @@ import { API_CONFIG } from "../../constants";
 
 export class TwelveDataService {
   private apiKey: string;
+  private requestTimestamps: number[] = [];
+  private readonly MAX_REQUESTS_PER_MINUTE = 8;
+  private readonly MINUTE_IN_MS = 60 * 1000;
 
   constructor() {
     const apiKey = process.env.TWELVE_DATA_API_KEY;
@@ -18,38 +21,39 @@ export class TwelveDataService {
     this.apiKey = apiKey;
   }
 
-  // async fetchCurrentPrice(symbol: string): Promise<number> {
-  //   try {
-  //     console.log(`🔍 [Twelve Data] Fetching price for: ${symbol}`);
-  //     const url = `${API_CONFIG.TWELVE_DATA.BASE_URL}/price?symbol=${symbol}&apikey=${this.apiKey}`;
-  //     console.log(`📡 Fetching URL: ${url}`);
+  /**
+   * Wait if necessary to comply with rate limits (8 requests per minute)
+   */
+  private async waitForRateLimit(): Promise<void> {
+    const now = Date.now();
 
-  //     const response = await fetch(url);
-  //     const data = await response.json();
-  //     console.log(`📥 Response for ${symbol}:`, JSON.stringify(data, null, 2));
+    // Remove timestamps older than 1 minute
+    this.requestTimestamps = this.requestTimestamps.filter(
+      (timestamp) => now - timestamp < this.MINUTE_IN_MS
+    );
 
-  //     // Check for error
-  //     if (data.status === "error") {
-  //       console.warn(`⚠️ Twelve Data error for ${symbol}:`, data.message);
-  //       throw new Error(`Twelve Data error: ${data.message}`);
-  //     }
+    // If we've made 8 requests in the last minute, wait
+    if (this.requestTimestamps.length >= this.MAX_REQUESTS_PER_MINUTE) {
+      const oldestRequest = this.requestTimestamps[0];
+      const waitTime = this.MINUTE_IN_MS - (now - oldestRequest) + 100; // Add 100ms buffer
 
-  //     // Twelve Data returns price in 'price' field
-  //     if (data.price !== undefined) {
-  //       const price = parseFloat(data.price);
-  //       console.log(`✅ Successfully fetched ${symbol}, price: ${price}`);
-  //       return price;
-  //     }
+      if (waitTime > 0) {
+        console.log(
+          `⏳ [Twelve Data] Rate limit reached. Waiting ${Math.ceil(waitTime / 1000)}s...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
+      }
+    }
 
-  //     throw new Error(`No valid price data in response for ${symbol}`);
-  //   } catch (error) {
-  //     console.error(`❌ Failed to fetch ${symbol}:`, error);
-  //     throw error;
-  //   }
-  // }
+    // Record this request
+    this.requestTimestamps.push(Date.now());
+  }
 
   async fetchHistoricalData(symbol: string, days: number = 30): Promise<StockData[]> {
     try {
+      // Wait for rate limit before making request
+      await this.waitForRateLimit();
+
       console.log(`🔍 [Twelve Data] Fetching historical data for: ${symbol}`);
       const url = `${API_CONFIG.TWELVE_DATA.BASE_URL}/time_series?symbol=${symbol}&interval=1day&outputsize=${days}&apikey=${this.apiKey}`;
       console.log(`📡 Fetching URL: ${url}`);
