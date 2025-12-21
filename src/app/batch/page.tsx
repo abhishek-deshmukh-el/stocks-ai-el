@@ -784,7 +784,9 @@ export default function BatchJobPage() {
                       return (
                         <TableRow key={stock.symbol}>
                           <TableCell className="font-bold">{stock.symbol}</TableCell>
-                          <TableCell>{stock.name}</TableCell>
+                          <TableCell className="max-w-[150px] truncate" title={stock.name}>
+                            {stock.name}
+                          </TableCell>
                           <TableCell className="text-right">
                             {stockPrices.has(stock.symbol) ? (
                               <span className="font-semibold">
@@ -920,7 +922,9 @@ export default function BatchJobPage() {
                       return (
                         <TableRow key={stock.symbol}>
                           <TableCell className="font-bold">{stock.symbol}</TableCell>
-                          <TableCell>{stock.name}</TableCell>
+                          <TableCell className="max-w-[150px] truncate" title={stock.name}>
+                            {stock.name}
+                          </TableCell>
                           <TableCell className="text-right">
                             {stockPrices.has(stock.symbol) ? (
                               <span className="font-semibold">
