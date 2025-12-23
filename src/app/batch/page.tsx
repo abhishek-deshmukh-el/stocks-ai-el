@@ -113,22 +113,34 @@ export default function BatchJobPage() {
     const fetchStockPrices = async () => {
       const newPrices = new Map<string, StockPriceData>();
 
-      for (const stock of STOCK_WATCHLIST) {
-        try {
-          const response = await fetch(
-            `/api/stock/price?symbol=${stock.symbol}&region=${stock.region}`
-          );
-          const data = await response.json();
+      try {
+        const response = await fetch("/api/stock/price/batch", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            stocks: STOCK_WATCHLIST.map((stock) => ({
+              symbol: stock.symbol,
+              region: stock.region,
+            })),
+          }),
+        });
 
-          if (data.success) {
-            newPrices.set(stock.symbol, {
-              price: data.price,
-              fetchedAt: new Date(data.fetchedAt),
-            });
-          }
-        } catch (error) {
-          console.error(`Failed to fetch price for ${stock.symbol}:`, error);
+        const data = await response.json();
+
+        if (data.success) {
+          data.results.forEach((result: any) => {
+            if (result.success) {
+              newPrices.set(result.symbol, {
+                price: result.price,
+                fetchedAt: new Date(result.fetchedAt),
+              });
+            }
+          });
         }
+      } catch (error) {
+        console.error("Failed to fetch batch prices:", error);
       }
 
       setStockPrices(newPrices);
@@ -142,22 +154,36 @@ export default function BatchJobPage() {
     const fetchRecommendations = async () => {
       const newRecommendations = new Map<string, Recommendation>();
 
-      for (const stock of STOCK_WATCHLIST) {
-        // Only fetch for US stocks (Finnhub supports US stocks)
-        if (stock.region === "US") {
-          try {
-            const response = await fetch(
-              `/api/stock/recommendations?symbol=${encodeURIComponent(stock.symbol)}&region=${stock.region}`
-            );
-            const data = await response.json();
+      // Only fetch for US stocks (Finnhub supports US stocks)
+      const usStocks = STOCK_WATCHLIST.filter((stock) => stock.region === "US");
 
-            if (data.success && data.recommendations && data.recommendations.length > 0) {
-              // Use the most recent recommendation (first item)
-              newRecommendations.set(stock.symbol, data.recommendations[0]);
-            }
-          } catch (error) {
-            console.error(`Failed to fetch recommendations for ${stock.symbol}:`, error);
+      if (usStocks.length > 0) {
+        try {
+          const response = await fetch("/api/stock/recommendations/batch", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              stocks: usStocks.map((stock) => ({
+                symbol: stock.symbol,
+                region: stock.region,
+              })),
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            data.results.forEach((result: any) => {
+              if (result.success && result.recommendations && result.recommendations.length > 0) {
+                // Use the most recent recommendation (first item)
+                newRecommendations.set(result.symbol, result.recommendations[0]);
+              }
+            });
           }
+        } catch (error) {
+          console.error("Failed to fetch batch recommendations:", error);
         }
       }
 
@@ -441,22 +467,36 @@ export default function BatchJobPage() {
   const fetchRecommendations = async (stocks: typeof STOCK_WATCHLIST) => {
     const newRecs = new Map<string, Recommendation>();
 
-    for (const stock of stocks) {
-      // Only fetch for US stocks (Finnhub supports US stocks)
-      if (stock.region === "US") {
-        try {
-          const response = await fetch(
-            `/api/stock/recommendations?symbol=${encodeURIComponent(stock.symbol)}&region=${stock.region}`
-          );
-          const data = await response.json();
+    // Only fetch for US stocks (Finnhub supports US stocks)
+    const usStocks = stocks.filter((stock) => stock.region === "US");
 
-          if (data.success && data.recommendations.length > 0) {
-            // Use the most recent recommendation
-            newRecs.set(stock.symbol, data.recommendations[0]);
-          }
-        } catch (error) {
-          console.error(`Failed to fetch recommendations for ${stock.symbol}:`, error);
+    if (usStocks.length > 0) {
+      try {
+        const response = await fetch("/api/stock/recommendations/batch", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            stocks: usStocks.map((stock) => ({
+              symbol: stock.symbol,
+              region: stock.region,
+            })),
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          data.results.forEach((result: any) => {
+            if (result.success && result.recommendations && result.recommendations.length > 0) {
+              // Use the most recent recommendation
+              newRecs.set(result.symbol, result.recommendations[0]);
+            }
+          });
         }
+      } catch (error) {
+        console.error("Failed to fetch batch recommendations:", error);
       }
     }
 
