@@ -17,6 +17,11 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { STOCK_WATCHLIST, US_STOCKS, INDIA_STOCKS, formatPrice } from "@/lib/constants";
 import { isAuthenticated, getCurrentUser } from "@/lib/auth";
+import {
+  DMAAnalysisAkshat,
+  getSignalDescriptionAkshat,
+  getSignalColorClassAkshat,
+} from "@/lib/dmaAkshat";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   ArrowUpDown,
@@ -81,6 +86,8 @@ export default function BatchJobPage() {
   const [isCalculating, setIsCalculating] = useState(false);
   const [stockPrices, setStockPrices] = useState<Map<string, StockPriceData>>(new Map());
   const [recommendations, setRecommendations] = useState<Map<string, Recommendation>>(new Map());
+  const [dmaData, setDmaData] = useState<Map<string, DMAAnalysisAkshat>>(new Map());
+  const [isLoadingDMA, setIsLoadingDMA] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -503,6 +510,56 @@ export default function BatchJobPage() {
     setRecommendations(newRecs);
   };
 
+  const calculateDMASignals = async () => {
+    setIsLoadingDMA(true);
+    toast({
+      title: "Calculating DMA Signals",
+      description: `Analyzing ${STOCK_WATCHLIST.length} stocks...`,
+    });
+
+    try {
+      const response = await fetch("/api/stock/dma/batch", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          stocks: STOCK_WATCHLIST.map((stock) => ({
+            symbol: stock.symbol,
+            region: stock.region,
+          })),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const newDMAData = new Map<string, DMAAnalysisAkshat>();
+        data.results.forEach((result: any) => {
+          if (result.success && result.analysis) {
+            newDMAData.set(result.symbol, result.analysis);
+          }
+        });
+        setDmaData(newDMAData);
+
+        toast({
+          title: "DMA Analysis Complete! 🎯",
+          description: `Analyzed ${data.totalSuccessful} of ${data.totalProcessed} stocks`,
+        });
+      } else {
+        throw new Error(data.error || "DMA analysis failed");
+      }
+    } catch (error) {
+      toast({
+        title: "Analysis Failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDMA(false);
+    }
+  };
+
   // const runBatchJob = async () => {
   //   setIsRunning(true);
   //   toast({
@@ -666,10 +723,10 @@ export default function BatchJobPage() {
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-muted-foreground">Status</span>
                   <Badge
-                    variant={isCalculating || isRunning ? "default" : "secondary"}
-                    className={`text-xs px-2 py-0.5 ${isCalculating || isRunning ? "bg-green-500 animate-pulse" : ""}`}
+                    variant={isCalculating || isRunning || isLoadingDMA ? "default" : "secondary"}
+                    className={`text-xs px-2 py-0.5 ${isCalculating || isRunning || isLoadingDMA ? "bg-green-500 animate-pulse" : ""}`}
                   >
-                    {isCalculating || isRunning ? "⚡ Processing" : "💤 Idle"}
+                    {isCalculating || isRunning || isLoadingDMA ? "⚡ Processing" : "💤 Idle"}
                   </Badge>
                 </div>
                 {lastRun && (
@@ -680,22 +737,37 @@ export default function BatchJobPage() {
                 )}
                 {volatilityData.size > 0 && (
                   <p className="text-xs text-green-600 dark:text-green-400 mt-1.5 font-medium">
-                    ✓ {volatilityData.size} calculated
+                    ✓ {volatilityData.size} stops calculated
+                  </p>
+                )}
+                {dmaData.size > 0 && (
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium">
+                    ✓ {dmaData.size} DMA signals
                   </p>
                 )}
               </div>
 
               {/* Action Buttons */}
-              <div className="space-y-1.5 flex justify-center">
+              <div className="space-y-1.5">
                 <Button
                   onClick={calculateVolatilityStops}
-                  disabled={isCalculating || isRunning}
+                  disabled={isCalculating || isRunning || isLoadingDMA}
                   size="sm"
-                  className="font-semibold text-xs h-9"
+                  className="w-full font-semibold text-xs h-9"
                   variant="default"
                 >
                   <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
                   {isCalculating ? "Calculating..." : "Calculate Stops"}
+                </Button>
+                <Button
+                  onClick={calculateDMASignals}
+                  disabled={isCalculating || isRunning || isLoadingDMA}
+                  size="sm"
+                  className="w-full font-semibold text-xs h-9"
+                  variant="outline"
+                >
+                  <Activity className="w-3.5 h-3.5 mr-1.5" />
+                  {isLoadingDMA ? "Analyzing..." : "Calculate DMA"}
                 </Button>
                 {/* <Button
                   onClick={runBatchJob}
@@ -756,10 +828,6 @@ export default function BatchJobPage() {
         <Card>
           <CardHeader>
             <CardTitle>🇺🇸 US Stocks</CardTitle>
-            <CardDescription>
-              US stocks being monitored for volatility stops ({filteredUsStocks.length} of{" "}
-              {US_STOCKS.length})
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="mb-4">
@@ -784,20 +852,11 @@ export default function BatchJobPage() {
                       Stock {getSortIcon("symbol")}
                     </TableHead>
                     <TableHead className="text-right">Current Price</TableHead>
+                    <TableHead className="text-center">DMAs</TableHead>
+                    <TableHead className="text-center">Trend</TableHead>
+                    <TableHead className="text-center">DMA Signal</TableHead>
                     <TableHead className="text-right">Volatility Stop</TableHead>
                     <TableHead className="text-right">Distance %</TableHead>
-                    {/* <TableHead
-                      className="text-right cursor-pointer hover:bg-muted"
-                      onClick={() => handleSort("atrPeriod")}
-                    >
-                      ATR Period {getSortIcon("atrPeriod")}
-                    </TableHead>
-                    <TableHead
-                      className="text-right cursor-pointer hover:bg-muted"
-                      onClick={() => handleSort("atrMultiplier")}
-                    >
-                      Multiplier {getSortIcon("atrMultiplier")}
-                    </TableHead> */}
                     <TableHead>Last Updated</TableHead>
                     <TableHead>Analyst Rating</TableHead>
                     <TableHead>Recommendation</TableHead>
@@ -806,7 +865,7 @@ export default function BatchJobPage() {
                 <TableBody>
                   {filteredUsStocks.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                         {searchQuery
                           ? `No US stocks found matching "${searchQuery}"`
                           : "No US stocks in watchlist"}
@@ -815,11 +874,13 @@ export default function BatchJobPage() {
                   ) : (
                     filteredUsStocks.map((stock) => {
                       const vData = volatilityData.get(stock.symbol);
+                      const dma = dmaData.get(stock.symbol);
                       return (
                         <TableRow key={stock.symbol}>
                           <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-bold">{stock.symbol}</span>
+                            <div className="flex items-center gap-0.5">
+                              <span className="font-bold whitespace-nowrap">{stock.symbol}</span>
+                              <span className="text-muted-foreground">-</span>
                               <span
                                 className="text-sm text-muted-foreground truncate max-w-[150px]"
                                 title={stock.name}
@@ -839,6 +900,104 @@ export default function BatchJobPage() {
                               </span>
                             ) : (
                               <span className="text-xs text-muted-foreground">Loading...</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {dma ? (
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
+                                  <Badge variant="outline" className="cursor-help">
+                                    View DMAs
+                                  </Badge>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-64">
+                                  <div className="space-y-2">
+                                    <h4 className="text-sm font-semibold">Moving Averages</h4>
+                                    <div className="space-y-1.5 text-xs">
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">50 DMA:</span>
+                                        <span className="font-semibold">
+                                          {formatPrice(dma.dma50, stock.symbol)}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">150 DMA:</span>
+                                        <span className="font-semibold">
+                                          {formatPrice(dma.dma150, stock.symbol)}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">200 DMA:</span>
+                                        <span className="font-semibold">
+                                          {formatPrice(dma.dma200, stock.symbol)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
+                            ) : isLoadingDMA ? (
+                              <span className="text-xs text-muted-foreground">...</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {dma ? (
+                              <Badge
+                                className={
+                                  dma.trendState === "BULLISH"
+                                    ? "bg-green-600 text-white hover:bg-green-700"
+                                    : dma.trendState === "BEARISH"
+                                      ? "bg-red-600 text-white hover:bg-red-700"
+                                      : "bg-gray-500 text-white hover:bg-gray-600"
+                                }
+                              >
+                                {dma.trendState}
+                              </Badge>
+                            ) : isLoadingDMA ? (
+                              <span className="text-xs text-muted-foreground">...</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {dma ? (
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
+                                  <Badge
+                                    variant="outline"
+                                    className={`${getSignalColorClassAkshat(dma.signal)} text-white cursor-help border-0`}
+                                  >
+                                    {getSignalDescriptionAkshat(dma.signal)}
+                                  </Badge>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-80">
+                                  <div className="space-y-2">
+                                    <h4 className="text-sm font-semibold">{dma.recommendation}</h4>
+                                    <div className="text-xs text-muted-foreground">
+                                      Akshat&apos;s Swing Strategy
+                                    </div>
+                                    <div className="space-y-1 pt-2 text-xs">
+                                      {dma.details.map((detail, idx) => (
+                                        <div key={idx}>{detail}</div>
+                                      ))}
+                                    </div>
+                                    <div className="pt-2 mt-2 border-t text-xs">
+                                      <div>
+                                        From 50 DMA: {dma.distanceFrom50DMAPercent.toFixed(1)}%
+                                      </div>
+                                      <div>
+                                        From 150 DMA: {dma.distanceFrom150DMAPercent.toFixed(1)}%
+                                      </div>
+                                    </div>
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
+                            ) : isLoadingDMA ? (
+                              <span className="text-xs text-muted-foreground">...</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
@@ -917,10 +1076,6 @@ export default function BatchJobPage() {
         <Card>
           <CardHeader>
             <CardTitle>🇮🇳 India Stocks</CardTitle>
-            <CardDescription>
-              Indian stocks being monitored for volatility stops ({filteredIndiaStocks.length} of{" "}
-              {INDIA_STOCKS.length})
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-auto max-h-96">
@@ -934,6 +1089,9 @@ export default function BatchJobPage() {
                       Stock {getSortIcon("symbol")}
                     </TableHead>
                     <TableHead className="text-right">Current Price</TableHead>
+                    <TableHead className="text-center">DMAs</TableHead>
+                    <TableHead className="text-center">Trend</TableHead>
+                    <TableHead className="text-center">DMA Signal</TableHead>
                     <TableHead className="text-right">Volatility Stop</TableHead>
                     <TableHead className="text-right">Distance %</TableHead>
                     <TableHead>Last Updated</TableHead>
@@ -943,7 +1101,7 @@ export default function BatchJobPage() {
                 <TableBody>
                   {filteredIndiaStocks.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                         {searchQuery
                           ? `No Indian stocks found matching "${searchQuery}"`
                           : "No Indian stocks in watchlist"}
@@ -952,11 +1110,13 @@ export default function BatchJobPage() {
                   ) : (
                     filteredIndiaStocks.map((stock) => {
                       const vData = volatilityData.get(stock.symbol);
+                      const dma = dmaData.get(stock.symbol);
                       return (
                         <TableRow key={stock.symbol}>
                           <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-bold">{stock.symbol}</span>
+                            <div className="flex items-center gap-0.5">
+                              <span className="font-bold whitespace-nowrap">{stock.symbol}</span>
+                              <span className="text-muted-foreground">-</span>
                               <span
                                 className="text-sm text-muted-foreground truncate max-w-[150px]"
                                 title={stock.name}
@@ -976,6 +1136,104 @@ export default function BatchJobPage() {
                               </span>
                             ) : (
                               <span className="text-xs text-muted-foreground">Loading...</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {dma ? (
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
+                                  <Badge variant="outline" className="cursor-help">
+                                    View DMAs
+                                  </Badge>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-64">
+                                  <div className="space-y-2">
+                                    <h4 className="text-sm font-semibold">Moving Averages</h4>
+                                    <div className="space-y-1.5 text-xs">
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">50 DMA:</span>
+                                        <span className="font-semibold">
+                                          {formatPrice(dma.dma50, stock.symbol)}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">150 DMA:</span>
+                                        <span className="font-semibold">
+                                          {formatPrice(dma.dma150, stock.symbol)}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">200 DMA:</span>
+                                        <span className="font-semibold">
+                                          {formatPrice(dma.dma200, stock.symbol)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
+                            ) : isLoadingDMA ? (
+                              <span className="text-xs text-muted-foreground">...</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {dma ? (
+                              <Badge
+                                className={
+                                  dma.trendState === "BULLISH"
+                                    ? "bg-green-600 text-white hover:bg-green-700"
+                                    : dma.trendState === "BEARISH"
+                                      ? "bg-red-600 text-white hover:bg-red-700"
+                                      : "bg-gray-500 text-white hover:bg-gray-600"
+                                }
+                              >
+                                {dma.trendState}
+                              </Badge>
+                            ) : isLoadingDMA ? (
+                              <span className="text-xs text-muted-foreground">...</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {dma ? (
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
+                                  <Badge
+                                    variant="outline"
+                                    className={`${getSignalColorClassAkshat(dma.signal)} text-white cursor-help border-0`}
+                                  >
+                                    {getSignalDescriptionAkshat(dma.signal)}
+                                  </Badge>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-80">
+                                  <div className="space-y-2">
+                                    <h4 className="text-sm font-semibold">{dma.recommendation}</h4>
+                                    <div className="text-xs text-muted-foreground">
+                                      Akshat&apos;s Swing Strategy
+                                    </div>
+                                    <div className="space-y-1 pt-2 text-xs">
+                                      {dma.details.map((detail, idx) => (
+                                        <div key={idx}>{detail}</div>
+                                      ))}
+                                    </div>
+                                    <div className="pt-2 mt-2 border-t text-xs">
+                                      <div>
+                                        From 50 DMA: {dma.distanceFrom50DMAPercent.toFixed(1)}%
+                                      </div>
+                                      <div>
+                                        From 150 DMA: {dma.distanceFrom150DMAPercent.toFixed(1)}%
+                                      </div>
+                                    </div>
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
+                            ) : isLoadingDMA ? (
+                              <span className="text-xs text-muted-foreground">...</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right">

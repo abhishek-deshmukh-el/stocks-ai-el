@@ -62,7 +62,7 @@ class StockOrchestrator {
    */
   async fetchHistoricalData(
     symbol: string,
-    days: number = 60,
+    days: number,
     region: "US" | "INDIA"
   ): Promise<StockData[]> {
     const cacheKey = `${symbol}_${days}_${region}`;
