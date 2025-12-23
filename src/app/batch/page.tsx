@@ -781,13 +781,7 @@ export default function BatchJobPage() {
                       className="cursor-pointer hover:bg-muted"
                       onClick={() => handleSort("symbol")}
                     >
-                      Symbol {getSortIcon("symbol")}
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer hover:bg-muted"
-                      onClick={() => handleSort("name")}
-                    >
-                      Name {getSortIcon("name")}
+                      Stock {getSortIcon("symbol")}
                     </TableHead>
                     <TableHead className="text-right">Current Price</TableHead>
                     <TableHead className="text-right">Volatility Stop</TableHead>
@@ -812,7 +806,7 @@ export default function BatchJobPage() {
                 <TableBody>
                   {filteredUsStocks.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         {searchQuery
                           ? `No US stocks found matching "${searchQuery}"`
                           : "No US stocks in watchlist"}
@@ -823,9 +817,16 @@ export default function BatchJobPage() {
                       const vData = volatilityData.get(stock.symbol);
                       return (
                         <TableRow key={stock.symbol}>
-                          <TableCell className="font-bold">{stock.symbol}</TableCell>
-                          <TableCell className="max-w-[150px] truncate" title={stock.name}>
-                            {stock.name}
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-bold">{stock.symbol}</span>
+                              <span
+                                className="text-sm text-muted-foreground truncate max-w-[150px]"
+                                title={stock.name}
+                              >
+                                {stock.name}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
                             {stockPrices.has(stock.symbol) ? (
@@ -930,13 +931,7 @@ export default function BatchJobPage() {
                       className="cursor-pointer hover:bg-muted"
                       onClick={() => handleSort("symbol")}
                     >
-                      Symbol {getSortIcon("symbol")}
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer hover:bg-muted"
-                      onClick={() => handleSort("name")}
-                    >
-                      Name {getSortIcon("name")}
+                      Stock {getSortIcon("symbol")}
                     </TableHead>
                     <TableHead className="text-right">Current Price</TableHead>
                     <TableHead className="text-right">Volatility Stop</TableHead>
@@ -948,7 +943,7 @@ export default function BatchJobPage() {
                 <TableBody>
                   {filteredIndiaStocks.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         {searchQuery
                           ? `No Indian stocks found matching "${searchQuery}"`
                           : "No Indian stocks in watchlist"}
@@ -959,9 +954,16 @@ export default function BatchJobPage() {
                       const vData = volatilityData.get(stock.symbol);
                       return (
                         <TableRow key={stock.symbol}>
-                          <TableCell className="font-bold">{stock.symbol}</TableCell>
-                          <TableCell className="max-w-[150px] truncate" title={stock.name}>
-                            {stock.name}
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-bold">{stock.symbol}</span>
+                              <span
+                                className="text-sm text-muted-foreground truncate max-w-[150px]"
+                                title={stock.name}
+                              >
+                                {stock.name}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
                             {stockPrices.has(stock.symbol) ? (
