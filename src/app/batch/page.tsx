@@ -892,11 +892,9 @@ export default function BatchJobPage() {
                             {vData ? (
                               <Badge
                                 className={
-                                  vData.volatilityStop.recommendation === "BUY"
-                                    ? "bg-green-600 text-white"
-                                    : vData.volatilityStop.recommendation === "SELL"
-                                      ? "bg-red-600 text-white"
-                                      : "bg-yellow-600 text-white"
+                                  vData.volatilityStop.recommendation === "SELL"
+                                    ? "bg-red-600 text-white hover:bg-red-700"
+                                    : "bg-green-600 text-white hover:bg-green-700"
                                 }
                               >
                                 {vData.volatilityStop.recommendation}
@@ -1021,11 +1019,9 @@ export default function BatchJobPage() {
                             {vData ? (
                               <Badge
                                 className={
-                                  vData.volatilityStop.recommendation === "BUY"
-                                    ? "bg-green-600 text-white"
-                                    : vData.volatilityStop.recommendation === "SELL"
-                                      ? "bg-red-600 text-white"
-                                      : "bg-yellow-600 text-white"
+                                  vData.volatilityStop.recommendation === "SELL"
+                                    ? "bg-red-600 text-white hover:bg-red-700"
+                                    : "bg-green-600 text-white hover:bg-green-700"
                                 }
                               >
                                 {vData.volatilityStop.recommendation}

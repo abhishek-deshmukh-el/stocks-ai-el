@@ -17,7 +17,7 @@ export interface VolatilityStop {
   atr: number;
   stopLoss: number;
   stopLossPercentage: number;
-  recommendation: "HOLD" | "SELL" | "BUY";
+  recommendation: "HOLD" | "SELL";
 }
 
 /**
@@ -192,16 +192,14 @@ export function calculateVolatilityStop(
   const stopLoss = currentPrice - atr * multiplier;
   const stopLossPercentage = ((currentPrice - stopLoss) / currentPrice) * 100;
 
-  // Determine recommendation based on stop loss distance
-  let recommendation: "HOLD" | "SELL" | "BUY";
+  // Determine recommendation: SELL if stop loss hit or high volatility, otherwise HOLD
+  let recommendation: "HOLD" | "SELL";
   if (forceSell) {
-    recommendation = "SELL"; // Forced sell recommendation
+    recommendation = "SELL"; // Forced sell recommendation (stop loss hit)
   } else if (stopLossPercentage > 10) {
-    recommendation = "SELL"; // High volatility, risky
-  } else if (stopLossPercentage < 3) {
-    recommendation = "BUY"; // Low volatility, stable
+    recommendation = "SELL"; // High volatility, risky - consider selling
   } else {
-    recommendation = "HOLD"; // Moderate volatility
+    recommendation = "HOLD"; // Normal volatility - hold position
   }
 
   return {
@@ -223,7 +221,7 @@ export interface VolatilityStopResult {
   stopLoss: number;
   stopLossPercentage: number;
   trend: "UP" | "DOWN";
-  signal: "HOLD" | "SELL" | "BUY";
+  signal: "HOLD" | "SELL";
 }
 
 export function calculateVolatilityStopTrailing(
@@ -253,7 +251,7 @@ export function calculateVolatilityStopTrailing(
 
     let stopLoss: number;
     let trend: "UP" | "DOWN";
-    let signal: "HOLD" | "SELL" | "BUY" = "HOLD";
+    let signal: "HOLD" | "SELL" = "HOLD";
 
     if (i === 0) {
       // Initialize first bar
@@ -274,6 +272,7 @@ export function calculateVolatilityStopTrailing(
           stopLoss = stopDown; // Switch to downtrend stop
         } else {
           trend = "UP";
+          signal = "HOLD"; // Continue holding in uptrend
         }
       } else {
         // Downtrend: stop loss falls with price but never rises
@@ -281,12 +280,13 @@ export function calculateVolatilityStopTrailing(
 
         // Check for bullish crossover: price closes above stop
         if (currentPrice > stopLoss) {
-          // Bullish crossover detected - price broke above trailing stop
-          signal = "BUY";
+          // Bullish crossover detected - price recovered above trailing stop
+          signal = "HOLD"; // Resume holding position
           trend = "UP";
           stopLoss = stopUp; // Switch to uptrend stop
         } else {
           trend = "DOWN";
+          signal = "HOLD"; // Stay in position during downtrend
         }
       }
     }
