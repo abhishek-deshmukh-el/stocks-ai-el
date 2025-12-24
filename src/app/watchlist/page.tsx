@@ -435,13 +435,7 @@ export default function WatchlistManagementPage() {
                 className="cursor-pointer hover:bg-muted"
                 onClick={() => handleSort("symbol")}
               >
-                Symbol {getSortIcon("symbol")}
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort("name")}
-              >
-                Name {getSortIcon("name")}
+                Stock {getSortIcon("symbol")}
               </TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted"
@@ -478,14 +472,15 @@ export default function WatchlistManagementPage() {
                 {editingId === stock.symbol && editForm ? (
                   <>
                     <TableCell>
-                      <Badge variant="secondary">{stock.symbol}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={editForm.name}
-                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        className="w-full"
-                      />
+                      <div className="flex items-center gap-0.5">
+                        <span className="font-bold whitespace-nowrap">{stock.symbol}</span>
+                        <span className="text-muted-foreground">-</span>
+                        <Input
+                          value={editForm.name}
+                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                          className="flex-1 min-w-[200px]"
+                        />
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Input
@@ -571,9 +566,17 @@ export default function WatchlistManagementPage() {
                 ) : (
                   <>
                     <TableCell>
-                      <Badge variant="secondary">{stock.symbol}</Badge>
+                      <div className="flex items-center gap-0.5">
+                        <span className="font-bold whitespace-nowrap">{stock.symbol}</span>
+                        <span className="text-muted-foreground">-</span>
+                        <span
+                          className="text-sm text-muted-foreground truncate max-w-[200px]"
+                          title={stock.name}
+                        >
+                          {stock.name}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell className="font-medium">{stock.name}</TableCell>
                     <TableCell>
                       {stock.targetPrice ? formatPrice(stock.targetPrice, stock.symbol) : "-"}
                     </TableCell>

@@ -211,6 +211,25 @@ export default function Home() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl">📈 DMA Strategy</CardTitle>
+              <CardDescription className="text-sm">
+                Analyze using Akshat&apos;s Swing Trading Strategy
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Get DMA signals and swing trading recommendations for stocks
+              </p>
+              <div className="flex justify-center">
+                <Button asChild variant="outline">
+                  <Link href="/dma-analyzer">DMA Analyzer</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

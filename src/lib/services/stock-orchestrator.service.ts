@@ -22,7 +22,7 @@ class StockOrchestrator {
   private recommendationsCache = new Map<string, CacheEntry<any[]>>();
 
   private readonly CACHE_DURATIONS = {
-    PRICE: 6 * 60 * 60 * 1000, // 6 hours
+    PRICE: 0.5 * 60 * 60 * 1000, // 30 minutes
     HISTORICAL: 6 * 60 * 60 * 1000, // 6 hours
     RECOMMENDATIONS: 6 * 60 * 60 * 1000, // 6 hours
   };
