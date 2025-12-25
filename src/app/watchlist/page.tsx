@@ -806,7 +806,7 @@ export default function WatchlistManagementPage() {
           <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="flex flex-row items-center justify-between bg-blue-50 dark:bg-blue-950/20">
               <div>
-                <CardTitle className="flex items-center gap-2">🇺🇸 US Stocks</CardTitle>
+                <CardTitle className="flex items-center gap-2">US Stocks</CardTitle>
                 <CardDescription>
                   {usStocks.length} US stock{usStocks.length !== 1 ? "s" : ""} being monitored
                 </CardDescription>
@@ -837,7 +837,7 @@ export default function WatchlistManagementPage() {
           <Card className="border-l-4 border-l-orange-500">
             <CardHeader className="flex flex-row items-center justify-between bg-orange-50 dark:bg-orange-950/20">
               <div>
-                <CardTitle className="flex items-center gap-2">🇮🇳 India Stocks</CardTitle>
+                <CardTitle className="flex items-center gap-2">India Stocks</CardTitle>
                 <CardDescription>
                   {indiaStocks.length} Indian stock{indiaStocks.length !== 1 ? "s" : ""} being
                   monitored

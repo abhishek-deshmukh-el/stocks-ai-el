@@ -503,7 +503,6 @@ export default function BatchJobPage() {
                 <div className="p-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-md border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-lg">🇺🇸</span>
                       <span className="text-xs font-semibold">US Market</span>
                     </div>
                     <Badge
@@ -518,7 +517,6 @@ export default function BatchJobPage() {
                 <div className="p-2 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950 dark:to-amber-950 rounded-md border border-orange-200 dark:border-orange-800">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-lg">🇮🇳</span>
                       <span className="text-xs font-semibold">India Market</span>
                     </div>
                     <Badge
@@ -558,7 +556,6 @@ export default function BatchJobPage() {
                 <div className="p-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-md border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-base">🇺🇸</span>
                       <span className="text-xs font-semibold">US Market</span>
                     </div>
                     <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
@@ -569,7 +566,6 @@ export default function BatchJobPage() {
                 <div className="p-2 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 rounded-md border border-orange-200 dark:border-orange-800">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-base">🇮🇳</span>
                       <span className="text-xs font-semibold">India Market</span>
                     </div>
                     <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
