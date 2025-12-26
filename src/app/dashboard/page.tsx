@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { US_STOCKS, INDIA_STOCKS } from "@/lib/constants";
-import { isAuthenticated, getCurrentUser, logout } from "@/lib/auth";
+import { isAuthenticated, getCurrentUser, logout, WatchlistItem } from "@/lib/auth";
 
 export default function Home() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState("");
+  const [userStocks, setUserStocks] = useState<WatchlistItem[]>([]);
 
   useEffect(() => {
     // Check authentication
@@ -24,6 +24,7 @@ export default function Home() {
     const user = getCurrentUser();
     if (user) {
       setUserName(user.name);
+      setUserStocks([...user.usStocks, ...user.indiaStocks]);
     }
 
     setIsLoading(false);
@@ -98,18 +99,28 @@ export default function Home() {
 
             <Card>
               <CardHeader>
-                <CardTitle>📊 {US_STOCKS.length + INDIA_STOCKS.length} Stocks Monitored</CardTitle>
+                <CardTitle>📊 {userStocks.length} Stocks Monitored</CardTitle>
                 <CardDescription>
-                  {US_STOCKS.length} US + {INDIA_STOCKS.length} India stocks tracked hourly
+                  {userStocks.filter((s: WatchlistItem) => s.region === "US").length} US +{" "}
+                  {userStocks.filter((s: WatchlistItem) => s.region === "INDIA").length} India
+                  stocks tracked hourly
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
                   <span className="block mb-2">
-                    <strong>US:</strong> {US_STOCKS.map((s) => s.symbol).join(", ")}
+                    <strong>US:</strong>{" "}
+                    {userStocks
+                      .filter((s: WatchlistItem) => s.region === "US")
+                      .map((s: WatchlistItem) => s.symbol)
+                      .join(", ")}
                   </span>
                   <span className="block">
-                    <strong>India:</strong> {INDIA_STOCKS.map((s: any) => s.symbol).join(", ")}
+                    <strong>India:</strong>{" "}
+                    {userStocks
+                      .filter((s: WatchlistItem) => s.region === "INDIA")
+                      .map((s: WatchlistItem) => s.symbol)
+                      .join(", ")}
                   </span>
                 </p>
                 <Button asChild className="w-full" variant="secondary">

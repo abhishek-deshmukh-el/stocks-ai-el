@@ -15,12 +15,36 @@ This is an **automated stock monitoring system** that:
 
 ## 🔑 Authentication System
 
-The app uses localStorage-based authentication:
+The app uses **MongoDB-backed authentication** with localStorage for session management:
 
 - **Login Page** (`/login`) - Users enter name + WhatsApp number (10-15 digits)
+- **MongoDB Persistence** - User data is stored in MongoDB database
 - **Protected Routes** - All main pages require authentication
 - **Auto-redirect** - Unauthenticated users redirected to login
 - **Session Management** - Logout clears session and returns to login
+
+### Database Setup
+
+Before running the app, set up MongoDB:
+
+1. **With Docker (Recommended)**:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+   - MongoDB will run on `localhost:27017`
+   - MongoDB Express GUI available at `http://localhost:8081`
+
+2. **Or use MongoDB Atlas** (cloud, free tier available)
+   - See [MONGODB_SETUP.md](./MONGODB_SETUP.md) for detailed instructions
+
+3. **Configure `.env.local`** (already set up for Docker):
+   ```
+   MONGODB_URI=mongodb://admin:password123@localhost:27017/stocks-ai?authSource=admin
+   ```
+
+For detailed setup instructions, see [MONGODB_SETUP.md](./MONGODB_SETUP.md)
 
 ### Protected Pages
 
@@ -161,19 +185,27 @@ Each stock includes:
 
 - Node.js 18.x or later
 - Yarn package manager
+- **MongoDB** (via Docker, local installation, or MongoDB Atlas)
 - Twilio account (for WhatsApp notifications)
 - Stock API key (Alpha Vantage or Finnhub)
 
 ### Installation
 
 1. Clone the repository
+
 2. Install dependencies:
 
-```bash
-yarn install
-```
+   ```bash
+   yarn install
+   ```
 
-3. Configure environment variables (see Environment Setup below)
+3. Start MongoDB:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+4. Configure environment variables (see Environment Setup below)
 
 ### Development Server
 
@@ -466,13 +498,6 @@ User can edit/delete anytime
 - **Port 5001** (changed from 5000)
 - Configured in: `package.json` scripts
 - `yarn dev` starts on port 5001
-
-### Adding Stocks to Watchlist
-
-1. Edit `src/lib/constants.ts`
-2. Add to `US_STOCKS` or `INDIA_STOCKS` array
-3. Include: symbol, name, region, optional targetPrice, atrPeriod, atrMultiplier
-4. Restart dev server
 
 ### Batch Job Interval
 

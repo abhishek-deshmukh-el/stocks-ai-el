@@ -2,10 +2,24 @@
  * Authentication utilities
  */
 
+export interface WatchlistItem {
+  symbol: string;
+  name: string;
+  targetPrice?: number;
+  atrPeriod: number;
+  atrMultiplier: number;
+  region: "US" | "INDIA";
+  _id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface UserInfo {
+  id: string;
   name: string;
   phoneNumber: string;
-  loginTime: string;
+  usStocks: WatchlistItem[];
+  indiaStocks: WatchlistItem[];
 }
 
 /**

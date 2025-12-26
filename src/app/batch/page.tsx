@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { STOCK_WATCHLIST, US_STOCKS, INDIA_STOCKS } from "@/lib/constants";
-import { isAuthenticated, getCurrentUser } from "@/lib/auth";
+import { isAuthenticated, getCurrentUser, WatchlistItem } from "@/lib/auth";
 import { DMAAnalysisAkshat } from "@/lib/dmaAkshat";
 import { StockTable } from "@/components/stock-table";
 import { Search, TrendingUp, List, Activity, Clock } from "lucide-react";
@@ -66,7 +65,17 @@ export default function BatchJobPage() {
   const [recommendations, setRecommendations] = useState<Map<string, Recommendation>>(new Map());
   const [dmaData, setDmaData] = useState<Map<string, DMAAnalysisAkshat>>(new Map());
   const [isLoadingDMA, setIsLoadingDMA] = useState(false);
+  const [userStocks, setUserStocks] = useState<WatchlistItem[]>([]);
   const { toast } = useToast();
+
+  // Get user stocks from localStorage
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      const allStocks = [...(user.usStocks || []), ...(user.indiaStocks || [])];
+      setUserStocks(allStocks);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -95,6 +104,8 @@ export default function BatchJobPage() {
 
   // Fetch stock prices on page load
   useEffect(() => {
+    if (userStocks.length === 0) return;
+
     const fetchStockPrices = async () => {
       const newPrices = new Map<string, StockPriceData>();
 
@@ -105,7 +116,7 @@ export default function BatchJobPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            stocks: STOCK_WATCHLIST.map((stock) => ({
+            stocks: userStocks.map((stock: WatchlistItem) => ({
               symbol: stock.symbol,
               region: stock.region,
             })),
@@ -132,15 +143,17 @@ export default function BatchJobPage() {
     };
 
     fetchStockPrices();
-  }, []);
+  }, [userStocks]);
 
   // Fetch analyst recommendations on page load
   useEffect(() => {
+    if (userStocks.length === 0) return;
+
     const fetchRecommendations = async () => {
       const newRecommendations = new Map<string, Recommendation>();
 
       // Only fetch for US stocks (Finnhub supports US stocks)
-      const usStocks = STOCK_WATCHLIST.filter((stock) => stock.region === "US");
+      const usStocks = userStocks.filter((stock: WatchlistItem) => stock.region === "US");
 
       if (usStocks.length > 0) {
         try {
@@ -150,7 +163,7 @@ export default function BatchJobPage() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              stocks: usStocks.map((stock) => ({
+              stocks: usStocks.map((stock: WatchlistItem) => ({
                 symbol: stock.symbol,
                 region: stock.region,
               })),
@@ -176,7 +189,7 @@ export default function BatchJobPage() {
     };
 
     fetchRecommendations();
-  }, []);
+  }, [userStocks]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -193,7 +206,7 @@ export default function BatchJobPage() {
     }
   };
 
-  const filterAndSortStocks = (stocks: typeof STOCK_WATCHLIST) => {
+  const filterAndSortStocks = (stocks: WatchlistItem[]) => {
     let filtered = stocks;
 
     // Apply search filter
@@ -256,18 +269,20 @@ export default function BatchJobPage() {
   };
 
   const filteredUsStocks = useMemo(() => {
-    return filterAndSortStocks(US_STOCKS);
-  }, [US_STOCKS, searchQuery, sortField, sortDirection]);
+    return filterAndSortStocks(userStocks.filter((stock: WatchlistItem) => stock.region === "US"));
+  }, [userStocks, searchQuery, sortField, sortDirection]);
 
   const filteredIndiaStocks = useMemo(() => {
-    return filterAndSortStocks(INDIA_STOCKS);
-  }, [INDIA_STOCKS, searchQuery, sortField, sortDirection]);
+    return filterAndSortStocks(
+      userStocks.filter((stock: WatchlistItem) => stock.region === "INDIA")
+    );
+  }, [userStocks, searchQuery, sortField, sortDirection]);
 
   const calculateVolatilityStops = async () => {
     setIsCalculating(true);
     toast({
       title: "Calculating Volatility Stops",
-      description: `Processing ${STOCK_WATCHLIST.length} stocks...`,
+      description: `Processing ${userStocks.length} stocks...`,
     });
 
     try {
@@ -281,7 +296,7 @@ export default function BatchJobPage() {
         return;
       }
 
-      const stocksToProcess = STOCK_WATCHLIST.map((stock) => ({
+      const stocksToProcess = userStocks.map((stock: WatchlistItem) => ({
         symbol: stock.symbol,
         region: stock.region,
         atrPeriod: stock.atrPeriod || 14,
@@ -327,7 +342,7 @@ export default function BatchJobPage() {
         }
 
         // Fetch recommendations for US stocks
-        fetchRecommendations(STOCK_WATCHLIST.filter((s) => s.region === "US"));
+        fetchRecommendations(userStocks.filter((s: WatchlistItem) => s.region === "US"));
 
         toast({
           title: "Volatility Calculation Complete! 🎉",
@@ -347,11 +362,11 @@ export default function BatchJobPage() {
     }
   };
 
-  const fetchRecommendations = async (stocks: typeof STOCK_WATCHLIST) => {
+  const fetchRecommendations = async (stocks: WatchlistItem[]) => {
     const newRecs = new Map<string, Recommendation>();
 
     // Only fetch for US stocks (Finnhub supports US stocks)
-    const usStocks = stocks.filter((stock) => stock.region === "US");
+    const usStocks = stocks.filter((stock: WatchlistItem) => stock.region === "US");
 
     if (usStocks.length > 0) {
       try {
@@ -361,7 +376,7 @@ export default function BatchJobPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            stocks: usStocks.map((stock) => ({
+            stocks: usStocks.map((stock: WatchlistItem) => ({
               symbol: stock.symbol,
               region: stock.region,
             })),
@@ -390,7 +405,7 @@ export default function BatchJobPage() {
     setIsLoadingDMA(true);
     toast({
       title: "Calculating DMA Signals",
-      description: `Analyzing ${STOCK_WATCHLIST.length} stocks...`,
+      description: `Analyzing ${userStocks.length} stocks...`,
     });
 
     try {
@@ -400,7 +415,7 @@ export default function BatchJobPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          stocks: STOCK_WATCHLIST.map((stock) => ({
+          stocks: userStocks.map((stock: WatchlistItem) => ({
             symbol: stock.symbol,
             region: stock.region,
           })),
@@ -545,7 +560,7 @@ export default function BatchJobPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold bg-gradient-to-br from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    {STOCK_WATCHLIST.length}
+                    {userStocks.length}
                   </div>
                   <p className="text-xs text-muted-foreground">Total</p>
                 </div>
@@ -559,7 +574,7 @@ export default function BatchJobPage() {
                       <span className="text-xs font-semibold">US Market</span>
                     </div>
                     <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                      {US_STOCKS.length}
+                      {userStocks.filter((s: WatchlistItem) => s.region === "US").length}
                     </div>
                   </div>
                 </div>
@@ -569,7 +584,7 @@ export default function BatchJobPage() {
                       <span className="text-xs font-semibold">India Market</span>
                     </div>
                     <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
-                      {INDIA_STOCKS.length}
+                      {userStocks.filter((s: WatchlistItem) => s.region === "INDIA").length}
                     </div>
                   </div>
                 </div>
@@ -652,7 +667,7 @@ export default function BatchJobPage() {
                   {isRunning ? "Running..." : "Run Batch Job"}
                 </Button> */}
                 {/* <p className="text-xs text-muted-foreground text-center pt-0.5">
-                  Monitor all {STOCK_WATCHLIST.length} stocks
+                  Monitor all {userStocks.length} stocks
                 </p> */}
               </div>
             </CardContent>

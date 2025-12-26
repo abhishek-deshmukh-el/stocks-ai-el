@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { calculateATR, calculateVolatilityStop } from "@/lib/volatility";
-import { BATCH_CONFIG, STOCK_WATCHLIST, formatPrice } from "@/lib/constants";
+import { BATCH_CONFIG, formatPrice } from "@/lib/constants";
 import { stockOrchestrator } from "@/lib/services/stock-orchestrator.service";
 import { sendWhatsApp } from "@/lib/whatsapp";
 
@@ -149,8 +149,6 @@ export async function POST(request: Request) {
 
       for (const stock of sellRecommendations) {
         try {
-          const stockInfo = STOCK_WATCHLIST.find((s) => s.symbol === stock.symbol);
-
           // Ensure all values are defined
           if (!stock.currentPrice || !stock.volatilityStop || !stock.atr) {
             console.warn(`⚠️ Skipping ${stock.symbol}: missing data`);
@@ -158,7 +156,7 @@ export async function POST(request: Request) {
           }
 
           // Send simple notification using sendWhatsApp
-          const simpleMessage = `🚨 SELL Alert\n\nSymbol: ${stock.symbol}\nName: ${stockInfo?.name || stock.symbol}\nCurrent Price: ${formatPrice(stock.currentPrice, stock.symbol)}\nVolatility Stop: ${formatPrice(stock.volatilityStop.stopLoss, stock.symbol)}\nDistance: ${stock.volatilityStop.stopLossPercentage.toFixed(1)}%\n\nRecommendation: SELL`;
+          const simpleMessage = `🚨 SELL Alert\n\nSymbol: ${stock.symbol}\nCurrent Price: ${formatPrice(stock.currentPrice, stock.symbol)}\nVolatility Stop: ${formatPrice(stock.volatilityStop.stopLoss, stock.symbol)}\nDistance: ${stock.volatilityStop.stopLossPercentage.toFixed(1)}%\n\nRecommendation: SELL`;
 
           await sendWhatsApp({ to: phoneNumber, message: simpleMessage });
 

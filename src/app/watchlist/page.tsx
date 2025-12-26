@@ -17,13 +17,7 @@ import {
 } from "@/components/ui/table";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useToast } from "@/hooks/use-toast";
-import {
-  US_STOCKS,
-  INDIA_STOCKS,
-  STOCK_WATCHLIST,
-  type WatchlistStock,
-  formatPrice,
-} from "@/lib/constants";
+import { type WatchlistStock, formatPrice } from "@/lib/constants";
 import { isAuthenticated, getCurrentUser } from "@/lib/auth";
 import { Trash2, Plus, Edit2, X, Check, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
@@ -145,9 +139,15 @@ export default function WatchlistManagementPage() {
       return;
     }
 
+    const user = getCurrentUser();
+    if (!user || !user.id) {
+      router.push("/login");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await fetch("/api/watchlist");
+      const response = await fetch(`/api/watchlist?userId=${user.id}`);
       const data = await response.json();
 
       if (data.success) {
@@ -178,11 +178,21 @@ export default function WatchlistManagementPage() {
     loadWatchlist();
   }, [loadWatchlist]);
 
-  const handleAddStock = () => {
+  const handleAddStock = async () => {
     if (!newStock.symbol || !newStock.name) {
       toast({
         title: "Missing Information",
         description: "Please provide both symbol and name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const user = getCurrentUser();
+    if (!user || !user.id) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
         variant: "destructive",
       });
       return;
@@ -197,38 +207,90 @@ export default function WatchlistManagementPage() {
       region: newStock.region,
     };
 
-    if (newStock.region === "US") {
-      setUsStocks([...usStocks, stockToAdd]);
-    } else {
-      setIndiaStocks([...indiaStocks, stockToAdd]);
+    try {
+      const response = await fetch("/api/watchlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          stock: stockToAdd,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to add stock");
+      }
+
+      if (newStock.region === "US") {
+        setUsStocks([...usStocks, stockToAdd]);
+      } else {
+        setIndiaStocks([...indiaStocks, stockToAdd]);
+      }
+
+      setNewStock({
+        symbol: "",
+        name: "",
+        targetPrice: 0,
+        atrPeriod: 14,
+        atrMultiplier: 2.0,
+        region: "US",
+      });
+      setIsAddingNew(false);
+
+      toast({
+        title: "Stock Added ✅",
+        description: `${stockToAdd.symbol} added to ${newStock.region} watchlist`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error Adding Stock",
+        description: error instanceof Error ? error.message : "Failed to add stock",
+        variant: "destructive",
+      });
     }
-
-    setNewStock({
-      symbol: "",
-      name: "",
-      targetPrice: 0,
-      atrPeriod: 14,
-      atrMultiplier: 2.0,
-      region: "US",
-    });
-    setIsAddingNew(false);
-
-    toast({
-      title: "Stock Added ✅",
-      description: `${stockToAdd.symbol} added to ${newStock.region} watchlist`,
-    });
   };
 
-  const handleDeleteStock = (symbol: string, region: "US" | "INDIA") => {
-    if (region === "US") {
-      setUsStocks(usStocks.filter((s) => s.symbol !== symbol));
-    } else {
-      setIndiaStocks(indiaStocks.filter((s) => s.symbol !== symbol));
+  const handleDeleteStock = async (symbol: string, region: "US" | "INDIA") => {
+    const user = getCurrentUser();
+    if (!user || !user.id) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive",
+      });
+      return;
     }
-    toast({
-      title: "Stock Removed 🗑️",
-      description: `${symbol} removed from watchlist`,
-    });
+
+    try {
+      const response = await fetch(`/api/watchlist?userId=${user.id}&symbol=${symbol}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to delete stock");
+      }
+
+      if (region === "US") {
+        setUsStocks(usStocks.filter((s) => s.symbol !== symbol));
+      } else {
+        setIndiaStocks(indiaStocks.filter((s) => s.symbol !== symbol));
+      }
+
+      toast({
+        title: "Stock Removed 🗑️",
+        description: `${symbol} removed from watchlist`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error Deleting Stock",
+        description: error instanceof Error ? error.message : "Failed to delete stock",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEditStock = (stock: WatchlistStock) => {
@@ -236,23 +298,57 @@ export default function WatchlistManagementPage() {
     setEditForm({ ...stock });
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editForm) return;
 
-    const region = editForm.region;
-    if (region === "US") {
-      setUsStocks(usStocks.map((s) => (s.symbol === editingId ? editForm : s)));
-    } else {
-      setIndiaStocks(indiaStocks.map((s) => (s.symbol === editingId ? editForm : s)));
+    const user = getCurrentUser();
+    if (!user || !user.id) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive",
+      });
+      return;
     }
 
-    setEditingId(null);
-    setEditForm(null);
+    try {
+      const response = await fetch("/api/watchlist", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          symbol: editingId,
+          stock: editForm,
+        }),
+      });
 
-    toast({
-      title: "Stock Updated ✅",
-      description: `${editForm.symbol} updated successfully`,
-    });
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to update stock");
+      }
+
+      const region = editForm.region;
+      if (region === "US") {
+        setUsStocks(usStocks.map((s) => (s.symbol === editingId ? editForm : s)));
+      } else {
+        setIndiaStocks(indiaStocks.map((s) => (s.symbol === editingId ? editForm : s)));
+      }
+
+      setEditingId(null);
+      setEditForm(null);
+
+      toast({
+        title: "Stock Updated ✅",
+        description: `${editForm.symbol} updated successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error Updating Stock",
+        description: error instanceof Error ? error.message : "Failed to update stock",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCancelEdit = () => {

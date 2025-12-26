@@ -3,9 +3,6 @@
  * Implementation of stock data fetching using Alpha Vantage API
  */
 
-import { StockData } from "../../volatility";
-import { API_CONFIG } from "../../constants";
-
 export class AlphaVantageService {
   private apiKey: string;
 

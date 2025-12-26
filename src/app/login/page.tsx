@@ -15,7 +15,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim()) {
@@ -49,24 +49,54 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    // Store user info in localStorage
-    const userInfo = {
-      name: name.trim(),
-      phoneNumber: phoneNumber.trim(),
-      loginTime: new Date().toISOString(),
-    };
+    try {
+      // Call the login API
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          phoneNumber: phoneNumber.trim(),
+        }),
+      });
 
-    localStorage.setItem("user", JSON.stringify(userInfo));
+      const data = await response.json();
 
-    toast({
-      title: "Login Successful! 🎉",
-      description: `Welcome, ${name}!`,
-    });
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed");
+      }
 
-    // Redirect to dashboard
-    setTimeout(() => {
-      router.push("/");
-    }, 500);
+      // Store user info in localStorage
+      const userInfo = {
+        id: data.user.id,
+        name: data.user.name,
+        phoneNumber: data.user.phoneNumber,
+        usStocks: data.user.usStocks || [],
+        indiaStocks: data.user.indiaStocks || [],
+      };
+
+      localStorage.setItem("user", JSON.stringify(userInfo));
+
+      toast({
+        title: "Login Successful! 🎉",
+        description: `Welcome, ${name}!`,
+      });
+
+      // Redirect to dashboard
+      setTimeout(() => {
+        router.push("/");
+      }, 500);
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error.message || "An error occurred during login",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

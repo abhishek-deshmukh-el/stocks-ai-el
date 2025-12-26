@@ -193,7 +193,7 @@ export function StockTable({
       : null;
 
   return (
-    <div className="overflow-auto max-h-96">
+    <div className="overflow-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -206,7 +206,6 @@ export function StockTable({
             <TableHead className="text-center">DMA Signal</TableHead>
             <TableHead className="text-right">Volatility Stop</TableHead>
             <TableHead className="text-right">Distance %</TableHead>
-            <TableHead>Last Updated</TableHead>
             {region === "US" && recommendations && <TableHead>Analyst Rating</TableHead>}
             <TableHead>Recommendation</TableHead>
           </TableRow>
@@ -215,7 +214,7 @@ export function StockTable({
           {emptyMessage ? (
             <TableRow>
               <TableCell
-                colSpan={region === "US" && recommendations ? 10 : 9}
+                colSpan={region === "US" && recommendations ? 9 : 8}
                 className="text-center text-muted-foreground py-8"
               >
                 {emptyMessage}
@@ -368,15 +367,6 @@ export function StockTable({
                       >
                         {vData.volatilityStop.stopLossPercentage.toFixed(1)}%
                       </Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-center block">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {stockPrices.has(stock.symbol) ? (
-                      <div className="text-xs text-muted-foreground">
-                        {stockPrices.get(stock.symbol)!.fetchedAt.toLocaleTimeString()}
-                      </div>
                     ) : (
                       <span className="text-muted-foreground text-center block">—</span>
                     )}

@@ -4,7 +4,6 @@
  * and routes requests accordingly
  */
 
-import { alphaVantageService } from "./us/alphavantage.service";
 import { finnhubService } from "./us/finnhub.service";
 import { twelveDataService } from "./us/twelvedata.service";
 import { nseService } from "./in/nse.service";
