@@ -3,19 +3,22 @@
  */
 
 import mongoose, { Document, Model, Schema } from "mongoose";
+import { Region } from "@/lib/constants";
 
 export interface IWatchlistItem {
   symbol: string;
   name: string;
-  targetPrice?: number;
+  alertPrice?: number;
   atrPeriod: number;
   atrMultiplier: number;
-  region: "US" | "INDIA";
+  region: Region;
+  owned?: boolean;
 }
 
 export interface IUser extends Document {
   name: string;
   phoneNumber: string;
+  fcmTokens: string[]; // Firebase Cloud Messaging tokens for push notifications
   createdAt: Date;
   updatedAt: Date;
   usStocks: IWatchlistItem[];
@@ -35,7 +38,7 @@ const WatchlistItemSchema = new Schema(
       required: true,
       trim: true,
     },
-    targetPrice: {
+    alertPrice: {
       type: Number,
       min: 0,
     },
@@ -51,8 +54,12 @@ const WatchlistItemSchema = new Schema(
     },
     region: {
       type: String,
-      enum: ["US", "INDIA"],
+      enum: [Region.US, Region.INDIA],
       required: true,
+    },
+    owned: {
+      type: Boolean,
+      default: false,
     },
   },
   {
@@ -78,6 +85,10 @@ const UserSchema: Schema<IUser> = new Schema(
         },
         message: "Please enter a valid phone number",
       },
+    },
+    fcmTokens: {
+      type: [String],
+      default: [],
     },
     usStocks: {
       type: [WatchlistItemSchema],

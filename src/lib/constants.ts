@@ -2,15 +2,20 @@
  * Application Constants
  */
 
+export enum Region {
+  US = "US",
+  INDIA = "INDIA",
+}
+
 export interface WatchlistStock {
   symbol: string;
   name: string;
-  targetPrice?: number;
+  alertPrice?: number;
   atrPeriod?: number;
   atrMultiplier?: number;
   notifyEmail?: string;
   notifyPhone?: string;
-  region?: "US" | "INDIA";
+  region?: Region;
 }
 
 /**

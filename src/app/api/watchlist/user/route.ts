@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import { Region } from "@/lib/constants";
 
 // GET - Fetch user's watchlist
 export async function GET(request: NextRequest) {
@@ -30,9 +31,9 @@ export async function GET(request: NextRequest) {
     let watchlist: any[] = [];
 
     // Get stocks based on region filter
-    if (region === "US") {
+    if (region === Region.US) {
       watchlist = user.usStocks || [];
-    } else if (region === "INDIA") {
+    } else if (region === Region.INDIA) {
       watchlist = user.indiaStocks || [];
     } else {
       // Return both if no region specified
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, symbol, name, targetPrice, atrPeriod = 14, atrMultiplier = 2.0, region } = body;
+    const { userId, symbol, name, alertPrice, atrPeriod = 14, atrMultiplier = 2.0, region } = body;
 
     // Validate required fields
     if (!userId || !symbol || !name || !region) {
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
     if (!user.indiaStocks) user.indiaStocks = [];
 
     // Determine which array to check based on region
-    const targetArray = region.toUpperCase() === "US" ? user.usStocks : user.indiaStocks;
+    const targetArray = region.toUpperCase() === Region.US ? user.usStocks : user.indiaStocks;
 
     // Check if stock already exists
     const existingStock = targetArray.find((item) => item.symbol === symbol.toUpperCase());
@@ -105,13 +106,13 @@ export async function POST(request: NextRequest) {
     const newStock = {
       symbol: symbol.toUpperCase(),
       name,
-      targetPrice,
+      alertPrice,
       atrPeriod,
       atrMultiplier,
       region: region.toUpperCase(),
     };
 
-    const fieldToUpdate = region.toUpperCase() === "US" ? "usStocks" : "indiaStocks";
+    const fieldToUpdate = region.toUpperCase() === Region.US ? "usStocks" : "indiaStocks";
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,

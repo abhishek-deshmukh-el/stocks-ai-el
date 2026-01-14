@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatPrice, WatchlistStock } from "@/lib/constants";
+import { formatPrice, Region, WatchlistStock } from "@/lib/constants";
 import {
   DMAAnalysisAkshat,
   getSignalDescriptionAkshat,
@@ -49,7 +49,7 @@ interface VolatilityData {
 type SortField =
   | "symbol"
   | "name"
-  | "targetPrice"
+  | "alertPrice"
   | "atrPeriod"
   | "atrMultiplier"
   | "currentPrice"
@@ -58,7 +58,7 @@ type SortDirection = "asc" | "desc" | null;
 
 interface StockTableProps {
   stocks: WatchlistStock[];
-  region: "US" | "IN";
+  region: Region;
   stockPrices: Map<string, StockPriceData>;
   volatilityData: Map<string, VolatilityData>;
   dmaData: Map<string, DMAAnalysisAkshat>;
@@ -127,7 +127,7 @@ export function StockTable({
 
     return (
       <HoverCard>
-        <HoverCardTrigger asChild>
+        <HoverCardTrigger asChild tabIndex={0}>
           <Badge className={`${badgeClass} cursor-help`}>{badgeText}</Badge>
         </HoverCardTrigger>
         <HoverCardContent className="w-80">
@@ -188,8 +188,8 @@ export function StockTable({
   const emptyMessage =
     stocks.length === 0
       ? searchQuery
-        ? `No ${region === "US" ? "US" : "Indian"} stocks found matching "${searchQuery}"`
-        : `No ${region === "US" ? "US" : "Indian"} stocks in watchlist`
+        ? `No ${region === Region.US ? "US" : "Indian"} stocks found matching "${searchQuery}"`
+        : `No ${region === Region.US ? "US" : "Indian"} stocks in watchlist`
       : null;
 
   return (
@@ -206,7 +206,7 @@ export function StockTable({
             <TableHead className="text-center">DMA Signal</TableHead>
             <TableHead className="text-right">Volatility Stop</TableHead>
             <TableHead className="text-right">Distance %</TableHead>
-            {region === "US" && recommendations && <TableHead>Analyst Rating</TableHead>}
+            {region === Region.US && recommendations && <TableHead>Analyst Rating</TableHead>}
             <TableHead>Recommendation</TableHead>
           </TableRow>
         </TableHeader>
@@ -214,7 +214,7 @@ export function StockTable({
           {emptyMessage ? (
             <TableRow>
               <TableCell
-                colSpan={region === "US" && recommendations ? 9 : 8}
+                colSpan={region === Region.US && recommendations ? 9 : 8}
                 className="text-center text-muted-foreground py-8"
               >
                 {emptyMessage}
@@ -254,7 +254,7 @@ export function StockTable({
                   <TableCell className="text-center">
                     {dma ? (
                       <HoverCard>
-                        <HoverCardTrigger asChild>
+                        <HoverCardTrigger asChild tabIndex={0}>
                           <Badge variant="outline" className="cursor-help">
                             View DMAs
                           </Badge>
@@ -313,7 +313,7 @@ export function StockTable({
                   <TableCell className="text-center">
                     {dma ? (
                       <HoverCard>
-                        <HoverCardTrigger asChild>
+                        <HoverCardTrigger asChild tabIndex={0}>
                           <Badge
                             variant="outline"
                             className={`${getSignalColorClassAkshat(dma.signal)} text-white cursor-help border-0`}
@@ -371,7 +371,7 @@ export function StockTable({
                       <span className="text-muted-foreground text-center block">—</span>
                     )}
                   </TableCell>
-                  {region === "US" && recommendations && (
+                  {region === Region.US && recommendations && (
                     <TableCell>
                       {recommendations.has(stock.symbol) ? (
                         getRecommendationBadge(recommendations.get(stock.symbol)!)

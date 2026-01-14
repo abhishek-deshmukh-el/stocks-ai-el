@@ -9,6 +9,7 @@ import { twelveDataService } from "./us/twelvedata.service";
 import { nseService } from "./in/nse.service";
 import { StockData } from "../volatility";
 import { yahooFinanceService } from "./in/yahoo-finance.service";
+import { Region } from "../constants";
 
 interface CacheEntry<T> {
   data: T;
@@ -33,9 +34,9 @@ class StockOrchestrator {
   /**
    * Fetch current stock price (cached for 5 minutes)
    * @param symbol - The stock symbol
-   * @param region - The market region: "US" or "INDIA"
+   * @param region - The market region: Region.US or Region.INDIA
    */
-  async fetchCurrentPrice(symbol: string, region: "US" | "INDIA" = "US"): Promise<number> {
+  async fetchCurrentPrice(symbol: string, region: Region = Region.US): Promise<number> {
     const cacheKey = `${symbol}_${region}`;
     const cached = this.priceCache.get(cacheKey);
     if (cached && this.isCacheValid(cached.timestamp, this.CACHE_DURATIONS.PRICE)) {
@@ -43,7 +44,7 @@ class StockOrchestrator {
     }
 
     let price: number;
-    if (region === "INDIA") {
+    if (region === Region.INDIA) {
       price = await nseService.fetchCurrentPrice(symbol);
     } else {
       price = await finnhubService.fetchCurrentPrice(symbol);
@@ -57,13 +58,9 @@ class StockOrchestrator {
    * Fetch historical stock data (cached for 1 hour)
    * @param symbol - The stock symbol
    * @param days - Number of days of historical data
-   * @param region - The market region: "US" or "INDIA"
+   * @param region - The market region: Region.US or Region.INDIA
    */
-  async fetchHistoricalData(
-    symbol: string,
-    days: number,
-    region: "US" | "INDIA"
-  ): Promise<StockData[]> {
+  async fetchHistoricalData(symbol: string, days: number, region: Region): Promise<StockData[]> {
     const cacheKey = `${symbol}_${days}_${region}`;
     const cached = this.historicalCache.get(cacheKey);
     if (cached && this.isCacheValid(cached.timestamp, this.CACHE_DURATIONS.HISTORICAL)) {
@@ -71,7 +68,7 @@ class StockOrchestrator {
     }
 
     let data: StockData[];
-    if (region === "INDIA") {
+    if (region === Region.INDIA) {
       data = await yahooFinanceService.fetchHistoricalData(symbol, days);
     } else {
       data = await twelveDataService.fetchHistoricalData(symbol, days);
@@ -84,10 +81,10 @@ class StockOrchestrator {
   /**
    * Fetch stock recommendations (cached for 1 hour)
    * @param symbol - The stock symbol
-   * @param region - The market region: "US" or "INDIA"
+   * @param region - The market region: Region.US or Region.INDIA
    * Note: Recommendations are only available for US stocks via Finnhub
    */
-  async fetchRecommendations(symbol: string, region: "US" | "INDIA" = "US"): Promise<any[]> {
+  async fetchRecommendations(symbol: string, region: Region = Region.US): Promise<any[]> {
     const cacheKey = `${symbol}_${region}`;
     const cached = this.recommendationsCache.get(cacheKey);
     if (cached && this.isCacheValid(cached.timestamp, this.CACHE_DURATIONS.RECOMMENDATIONS)) {
@@ -96,7 +93,7 @@ class StockOrchestrator {
 
     // Recommendations only available for US stocks
     let recommendations: any[];
-    if (region === "INDIA") {
+    if (region === Region.INDIA) {
       recommendations = await nseService.fetchRecommendations(symbol);
     } else {
       recommendations = await finnhubService.fetchRecommendations(symbol);

@@ -163,7 +163,7 @@ export default function DMAAnalyzer() {
                 <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Signal</div>
                   <HoverCard>
-                    <HoverCardTrigger asChild>
+                    <HoverCardTrigger asChild tabIndex={0}>
                       <Badge
                         variant="outline"
                         className={`${getSignalColorClassAkshat(data.signal)} text-white cursor-help border-0`}

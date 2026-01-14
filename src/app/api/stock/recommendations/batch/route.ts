@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stockOrchestrator } from "@/lib/services/stock-orchestrator.service";
+import { Region } from "@/lib/constants";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,34 +14,32 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch all recommendations in parallel
-    const recommendationPromises = stocks.map(
-      async (stock: { symbol: string; region: "US" | "INDIA" }) => {
-        try {
-          const recommendations = await stockOrchestrator.fetchRecommendations(
-            stock.symbol,
-            stock.region
-          );
-          return {
-            symbol: stock.symbol,
-            region: stock.region,
-            recommendations,
-            success: true,
-            fetchedAt: new Date().toISOString(),
-          };
-        } catch (error) {
-          console.error(
-            `Error fetching recommendations for ${stock.symbol} (${stock.region}):`,
-            error
-          );
-          return {
-            symbol: stock.symbol,
-            region: stock.region,
-            success: false,
-            error: error instanceof Error ? error.message : "Failed to fetch recommendations",
-          };
-        }
+    const recommendationPromises = stocks.map(async (stock: { symbol: string; region: Region }) => {
+      try {
+        const recommendations = await stockOrchestrator.fetchRecommendations(
+          stock.symbol,
+          stock.region
+        );
+        return {
+          symbol: stock.symbol,
+          region: stock.region,
+          recommendations,
+          success: true,
+          fetchedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        console.error(
+          `Error fetching recommendations for ${stock.symbol} (${stock.region}):`,
+          error
+        );
+        return {
+          symbol: stock.symbol,
+          region: stock.region,
+          success: false,
+          error: error instanceof Error ? error.message : "Failed to fetch recommendations",
+        };
       }
-    );
+    });
 
     const results = await Promise.all(recommendationPromises);
 

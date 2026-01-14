@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { stockOrchestrator } from "@/lib/services/stock-orchestrator.service";
+import { Region } from "@/lib/constants";
 
 /**
  * API Route: Get Stock Recommendations
@@ -11,7 +12,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const symbol = searchParams.get("symbol");
-    const region = searchParams.get("region") as "US" | "INDIA";
+    const region = searchParams.get("region") as Region;
 
     if (!symbol) {
       return NextResponse.json(

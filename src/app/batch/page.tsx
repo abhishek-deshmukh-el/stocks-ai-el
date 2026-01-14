@@ -11,6 +11,7 @@ import { isAuthenticated, getCurrentUser, WatchlistItem } from "@/lib/auth";
 import { DMAAnalysisAkshat } from "@/lib/dmaAkshat";
 import { StockTable } from "@/components/stock-table";
 import { Search, TrendingUp, List, Activity, Clock } from "lucide-react";
+import { Region } from "@/lib/constants";
 
 interface StockPriceData {
   price: number;
@@ -30,7 +31,7 @@ interface Recommendation {
 type SortField =
   | "symbol"
   | "name"
-  | "targetPrice"
+  | "alertPrice"
   | "atrPeriod"
   | "atrMultiplier"
   | "currentPrice"
@@ -153,7 +154,7 @@ export default function BatchJobPage() {
       const newRecommendations = new Map<string, Recommendation>();
 
       // Only fetch for US stocks (Finnhub supports US stocks)
-      const usStocks = userStocks.filter((stock: WatchlistItem) => stock.region === "US");
+      const usStocks = userStocks.filter((stock: WatchlistItem) => stock.region === Region.US);
 
       if (usStocks.length > 0) {
         try {
@@ -231,7 +232,7 @@ export default function BatchJobPage() {
             aValue = a[sortField];
             bValue = b[sortField];
             break;
-          case "targetPrice":
+          case "alertPrice":
           case "atrPeriod":
           case "atrMultiplier":
             aValue = a[sortField] ?? 0;
@@ -269,12 +270,14 @@ export default function BatchJobPage() {
   };
 
   const filteredUsStocks = useMemo(() => {
-    return filterAndSortStocks(userStocks.filter((stock: WatchlistItem) => stock.region === "US"));
+    return filterAndSortStocks(
+      userStocks.filter((stock: WatchlistItem) => stock.region === Region.US)
+    );
   }, [userStocks, searchQuery, sortField, sortDirection]);
 
   const filteredIndiaStocks = useMemo(() => {
     return filterAndSortStocks(
-      userStocks.filter((stock: WatchlistItem) => stock.region === "INDIA")
+      userStocks.filter((stock: WatchlistItem) => stock.region === Region.INDIA)
     );
   }, [userStocks, searchQuery, sortField, sortDirection]);
 
@@ -342,7 +345,7 @@ export default function BatchJobPage() {
         }
 
         // Fetch recommendations for US stocks
-        fetchRecommendations(userStocks.filter((s: WatchlistItem) => s.region === "US"));
+        fetchRecommendations(userStocks.filter((s: WatchlistItem) => s.region === Region.US));
 
         toast({
           title: "Volatility Calculation Complete! 🎉",
@@ -366,7 +369,7 @@ export default function BatchJobPage() {
     const newRecs = new Map<string, Recommendation>();
 
     // Only fetch for US stocks (Finnhub supports US stocks)
-    const usStocks = stocks.filter((stock: WatchlistItem) => stock.region === "US");
+    const usStocks = stocks.filter((stock: WatchlistItem) => stock.region === Region.US);
 
     if (usStocks.length > 0) {
       try {
@@ -574,7 +577,7 @@ export default function BatchJobPage() {
                       <span className="text-xs font-semibold">US Market</span>
                     </div>
                     <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                      {userStocks.filter((s: WatchlistItem) => s.region === "US").length}
+                      {userStocks.filter((s: WatchlistItem) => s.region === Region.US).length}
                     </div>
                   </div>
                 </div>
@@ -584,7 +587,7 @@ export default function BatchJobPage() {
                       <span className="text-xs font-semibold">India Market</span>
                     </div>
                     <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
-                      {userStocks.filter((s: WatchlistItem) => s.region === "INDIA").length}
+                      {userStocks.filter((s: WatchlistItem) => s.region === Region.INDIA).length}
                     </div>
                   </div>
                 </div>
@@ -730,7 +733,7 @@ export default function BatchJobPage() {
             </div>
             <StockTable
               stocks={filteredUsStocks}
-              region="US"
+              region={Region.US}
               stockPrices={stockPrices}
               volatilityData={volatilityData}
               dmaData={dmaData}
@@ -751,7 +754,7 @@ export default function BatchJobPage() {
           <CardContent>
             <StockTable
               stocks={filteredIndiaStocks}
-              region="IN"
+              region={Region.INDIA}
               stockPrices={stockPrices}
               volatilityData={volatilityData}
               dmaData={dmaData}

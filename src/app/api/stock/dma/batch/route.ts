@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stockOrchestrator } from "@/lib/services/stock-orchestrator.service";
 import { analyzeDMAAkshat, DMADataAkshat } from "@/lib/dmaAkshat";
+import { Region } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 interface DMARequest {
   symbol: string;
-  region: "US" | "INDIA";
+  region: Region;
 }
 
 interface DMABatchRequest {
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const symbolsParam = searchParams.get("symbols");
-    const regionParam = searchParams.get("region") || "US";
+    const regionParam = searchParams.get("region") || Region.US;
 
     if (!symbolsParam) {
       return NextResponse.json(
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
     const symbols = symbolsParam.split(",").map((s) => s.trim().toUpperCase());
     const stocks = symbols.map((symbol) => ({
       symbol,
-      region: regionParam as "US" | "INDIA",
+      region: regionParam as Region,
     }));
 
     const results = await Promise.allSettled(

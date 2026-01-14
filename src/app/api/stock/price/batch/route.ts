@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stockOrchestrator } from "@/lib/services/stock-orchestrator.service";
+import { Region } from "@/lib/constants";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch all prices in parallel
-    const pricePromises = stocks.map(async (stock: { symbol: string; region: "US" | "INDIA" }) => {
+    const pricePromises = stocks.map(async (stock: { symbol: string; region: Region }) => {
       try {
         const price = await stockOrchestrator.fetchCurrentPrice(stock.symbol, stock.region);
         return {

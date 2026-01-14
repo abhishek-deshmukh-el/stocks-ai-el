@@ -2,13 +2,15 @@
  * Authentication utilities
  */
 
+import { Region } from "./constants";
+
 export interface WatchlistItem {
   symbol: string;
   name: string;
-  targetPrice?: number;
+  alertPrice?: number;
   atrPeriod: number;
   atrMultiplier: number;
-  region: "US" | "INDIA";
+  region: Region;
   _id?: string;
   createdAt?: Date;
   updatedAt?: Date;

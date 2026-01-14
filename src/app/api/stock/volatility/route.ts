@@ -3,6 +3,7 @@ import { calculateATR, calculateVolatilityStop } from "@/lib/volatility";
 import { BATCH_CONFIG, formatPrice } from "@/lib/constants";
 import { stockOrchestrator } from "@/lib/services/stock-orchestrator.service";
 import { sendWhatsApp } from "@/lib/whatsapp";
+import { Region } from "@/lib/constants";
 
 /**
  * API Route: Calculate Volatility Stop
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const symbol = searchParams.get("symbol");
-    const region = searchParams.get("region") as "US" | "INDIA";
+    const region = searchParams.get("region") as Region;
     const atrPeriod = parseInt(searchParams.get("atrPeriod") || "14");
     const atrMultiplier = parseFloat(searchParams.get("atrMultiplier") || "2.0");
 
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
 
     for (const stock of stocks) {
       try {
-        const { symbol, region = "US", atrPeriod = 14, atrMultiplier = 2.0 } = stock;
+        const { symbol, region = Region.US, atrPeriod = 14, atrMultiplier = 2.0 } = stock;
 
         // Fetch current price
         const currentPrice = await stockOrchestrator.fetchCurrentPrice(symbol, region);

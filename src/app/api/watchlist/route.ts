@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import { Region } from "@/lib/constants";
 
 /**
  * API Route: Get Stock Watchlist
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
     }
 
     // Add stock to appropriate array based on region
-    if (stock.region === "US") {
+    if (stock.region === Region.US) {
       // Check if stock already exists
       const exists = user.usStocks.some((s: any) => s.symbol === stock.symbol);
       if (exists) {
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
         );
       }
       user.usStocks.push(stock);
-    } else if (stock.region === "INDIA") {
+    } else if (stock.region === Region.INDIA) {
       // Check if stock already exists
       const exists = user.indiaStocks.some((s: any) => s.symbol === stock.symbol);
       if (exists) {
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
       user.indiaStocks.push(stock);
     } else {
       return NextResponse.json(
-        { success: false, error: "Invalid region. Must be US or INDIA" },
+        { success: false, error: "Invalid region. Must be Region.US or Region.INDIA" },
         { status: 400 }
       );
     }
@@ -140,13 +141,13 @@ export async function PUT(request: Request) {
     // Find and update stock in appropriate array based on region
     let updated = false;
 
-    if (stock.region === "US") {
+    if (stock.region === Region.US) {
       const index = user.usStocks.findIndex((s: any) => s.symbol === symbol);
       if (index !== -1) {
         user.usStocks[index] = stock;
         updated = true;
       }
-    } else if (stock.region === "INDIA") {
+    } else if (stock.region === Region.INDIA) {
       const index = user.indiaStocks.findIndex((s: any) => s.symbol === symbol);
       if (index !== -1) {
         user.indiaStocks[index] = stock;

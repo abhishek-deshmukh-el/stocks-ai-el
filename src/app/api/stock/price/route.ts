@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stockOrchestrator } from "@/lib/services/stock-orchestrator.service";
+import { Region } from "@/lib/constants";
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const symbol = searchParams.get("symbol");
-    const region = searchParams.get("region") as "US" | "INDIA";
+    const region = searchParams.get("region") as Region;
 
     if (!symbol) {
       return NextResponse.json({ success: false, error: "Symbol is required" }, { status: 400 });
