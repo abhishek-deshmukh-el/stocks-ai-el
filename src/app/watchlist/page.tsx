@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/table";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useToast } from "@/hooks/use-toast";
-import { type WatchlistStock, formatPrice } from "@/lib/constants";
+import { Region, type WatchlistStock, formatPrice } from "@/lib/constants";
 import { isAuthenticated, getCurrentUser } from "@/lib/auth";
 import { Trash2, Plus, Edit2, X, Check, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
@@ -36,7 +36,7 @@ interface Recommendation {
   symbol: string;
 }
 
-type SortField = "symbol" | "name" | "targetPrice" | "atrPeriod" | "atrMultiplier" | "price";
+type SortField = "symbol" | "name" | "alertPrice" | "atrPeriod" | "atrMultiplier" | "price";
 type SortDirection = "asc" | "desc" | null;
 
 export default function WatchlistManagementPage() {
@@ -47,9 +47,10 @@ export default function WatchlistManagementPage() {
   const [recommendations, setRecommendations] = useState<Map<string, Recommendation>>(new Map());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const [addingRegion, setAddingRegion] = useState<"US" | "INDIA">("US");
+  const [addingRegion, setAddingRegion] = useState<Region>(Region.US);
   const [stockPrices, setStockPrices] = useState<Map<string, StockPriceData>>(new Map());
   const [fetchingPrices, setFetchingPrices] = useState(false);
+  const [checkingAlerts, setCheckingAlerts] = useState(false);
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const { toast } = useToast();
@@ -58,10 +59,11 @@ export default function WatchlistManagementPage() {
   const [newStock, setNewStock] = useState({
     symbol: "",
     name: "",
-    targetPrice: 0,
+    alertPrice: 0,
     atrPeriod: 14,
     atrMultiplier: 2.0,
-    region: "US" as "US" | "INDIA",
+    region: Region.US as Region,
+    owned: false,
   });
 
   // Edit form state
@@ -104,7 +106,7 @@ export default function WatchlistManagementPage() {
   };
 
   const fetchRecommendations = async (stocks: WatchlistStock[]) => {
-    const usStocks = stocks.filter((s) => s.region === "US");
+    const usStocks = stocks.filter((s) => s.region === Region.US);
     if (usStocks.length === 0) return;
 
     const newRecs = new Map<string, Recommendation>();
@@ -152,8 +154,8 @@ export default function WatchlistManagementPage() {
 
       if (data.success) {
         const allStocks = data.stocks;
-        const usFiltered = allStocks.filter((s: WatchlistStock) => s.region === "US");
-        const indiaFiltered = allStocks.filter((s: WatchlistStock) => s.region === "INDIA");
+        const usFiltered = allStocks.filter((s: WatchlistStock) => s.region === Region.US);
+        const indiaFiltered = allStocks.filter((s: WatchlistStock) => s.region === Region.INDIA);
         setUsStocks(usFiltered);
         setIndiaStocks(indiaFiltered);
 
@@ -201,7 +203,7 @@ export default function WatchlistManagementPage() {
     const stockToAdd: WatchlistStock = {
       symbol: newStock.symbol.toUpperCase(),
       name: newStock.name,
-      targetPrice: newStock.targetPrice || undefined,
+      alertPrice: newStock.alertPrice || undefined,
       atrPeriod: newStock.atrPeriod,
       atrMultiplier: newStock.atrMultiplier,
       region: newStock.region,
@@ -223,7 +225,7 @@ export default function WatchlistManagementPage() {
         throw new Error(data.error || "Failed to add stock");
       }
 
-      if (newStock.region === "US") {
+      if (newStock.region === Region.US) {
         setUsStocks([...usStocks, stockToAdd]);
       } else {
         setIndiaStocks([...indiaStocks, stockToAdd]);
@@ -232,10 +234,11 @@ export default function WatchlistManagementPage() {
       setNewStock({
         symbol: "",
         name: "",
-        targetPrice: 0,
+        alertPrice: 0,
         atrPeriod: 14,
         atrMultiplier: 2.0,
-        region: "US",
+        region: Region.US,
+        owned: false,
       });
       setIsAddingNew(false);
 
@@ -252,7 +255,7 @@ export default function WatchlistManagementPage() {
     }
   };
 
-  const handleDeleteStock = async (symbol: string, region: "US" | "INDIA") => {
+  const handleDeleteStock = async (symbol: string, region: Region) => {
     const user = getCurrentUser();
     if (!user || !user.id) {
       toast({
@@ -274,7 +277,7 @@ export default function WatchlistManagementPage() {
         throw new Error(data.error || "Failed to delete stock");
       }
 
-      if (region === "US") {
+      if (region === Region.US) {
         setUsStocks(usStocks.filter((s) => s.symbol !== symbol));
       } else {
         setIndiaStocks(indiaStocks.filter((s) => s.symbol !== symbol));
@@ -299,7 +302,7 @@ export default function WatchlistManagementPage() {
   };
 
   const handleSaveEdit = async () => {
-    if (!editForm) return;
+    if (!editForm || !editingId) return;
 
     const user = getCurrentUser();
     if (!user || !user.id) {
@@ -311,28 +314,84 @@ export default function WatchlistManagementPage() {
       return;
     }
 
-    try {
-      const response = await fetch("/api/watchlist", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          symbol: editingId,
-          stock: editForm,
-        }),
-      });
+    // Check if symbol changed
+    const symbolChanged = editForm.symbol.toUpperCase() !== editingId.toUpperCase();
+    const newSymbol = editForm.symbol.toUpperCase();
 
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || "Failed to update stock");
+    // If symbol changed, check for duplicates
+    if (symbolChanged) {
+      const allStocks = [...usStocks, ...indiaStocks];
+      const duplicate = allStocks.find(
+        (s) => s.symbol.toUpperCase() === newSymbol && s.symbol !== editingId
+      );
+      if (duplicate) {
+        toast({
+          title: "Duplicate Symbol",
+          description: `${newSymbol} already exists in your watchlist`,
+          variant: "destructive",
+        });
+        return;
       }
+    }
 
-      const region = editForm.region;
-      if (region === "US") {
-        setUsStocks(usStocks.map((s) => (s.symbol === editingId ? editForm : s)));
+    try {
+      if (symbolChanged) {
+        // Symbol changed: delete old and add new
+        // First delete the old one
+        const deleteResponse = await fetch(`/api/watchlist?userId=${user.id}&symbol=${editingId}`, {
+          method: "DELETE",
+        });
+        const deleteData = await deleteResponse.json();
+        if (!deleteData.success) {
+          throw new Error(deleteData.error || "Failed to delete old stock");
+        }
+
+        // Then add the new one
+        const updatedStock = { ...editForm, symbol: newSymbol };
+        const addResponse = await fetch("/api/watchlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.id,
+            stock: updatedStock,
+          }),
+        });
+        const addData = await addResponse.json();
+        if (!addData.success) {
+          throw new Error(addData.error || "Failed to add updated stock");
+        }
+
+        // Update local state
+        const region = editForm.region;
+        if (region === Region.US) {
+          setUsStocks(usStocks.map((s) => (s.symbol === editingId ? updatedStock : s)));
+        } else {
+          setIndiaStocks(indiaStocks.map((s) => (s.symbol === editingId ? updatedStock : s)));
+        }
       } else {
-        setIndiaStocks(indiaStocks.map((s) => (s.symbol === editingId ? editForm : s)));
+        // Symbol unchanged: normal update
+        const response = await fetch("/api/watchlist", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.id,
+            symbol: editingId,
+            stock: editForm,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || "Failed to update stock");
+        }
+
+        const region = editForm.region;
+        if (region === Region.US) {
+          setUsStocks(usStocks.map((s) => (s.symbol === editingId ? editForm : s)));
+        } else {
+          setIndiaStocks(indiaStocks.map((s) => (s.symbol === editingId ? editForm : s)));
+        }
       }
 
       setEditingId(null);
@@ -384,6 +443,45 @@ export default function WatchlistManagementPage() {
     return <ArrowUpDown className="w-4 h-4 ml-1 inline" />;
   };
 
+  const handleTriggerPriceCheck = async () => {
+    const user = getCurrentUser();
+    if (!user || !user.phoneNumber) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCheckingAlerts(true);
+    try {
+      const response = await fetch("/api/cron/check-prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber: user.phoneNumber }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "Price Check Complete",
+          description: `Checked ${data.checkedCount} stocks, sent ${data.notificationsSent} notifications`,
+        });
+      } else {
+        throw new Error(data.error || "Failed to check prices");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to check prices",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingAlerts(false);
+    }
+  };
+
   const getRecommendationBadge = (rec: Recommendation) => {
     const total = rec.strongBuy + rec.buy + rec.hold + rec.sell + rec.strongSell;
     const bullish = rec.strongBuy + rec.buy;
@@ -415,7 +513,7 @@ export default function WatchlistManagementPage() {
 
     return (
       <HoverCard>
-        <HoverCardTrigger asChild>
+        <HoverCardTrigger asChild tabIndex={0}>
           <Badge className={`${badgeClass} cursor-help`}>{badgeText}</Badge>
         </HoverCardTrigger>
         <HoverCardContent className="w-80">
@@ -511,9 +609,9 @@ export default function WatchlistManagementPage() {
   const sortedIndiaStocks = useMemo(() => sortStocks(indiaStocks), [indiaStocks, sortStocks]);
 
   const totalStocks = usStocks.length + indiaStocks.length;
-  const totalWithTargets = [...usStocks, ...indiaStocks].filter((s) => s.targetPrice).length;
+  const totalWithTargets = [...usStocks, ...indiaStocks].filter((s) => s.alertPrice).length;
 
-  const renderStockTable = (stocks: WatchlistStock[], region: "US" | "INDIA") => {
+  const renderStockTable = (stocks: WatchlistStock[], region: Region) => {
     if (stocks.length === 0) {
       return (
         <div className="text-center py-8 text-muted-foreground">
@@ -535,9 +633,9 @@ export default function WatchlistManagementPage() {
               </TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort("targetPrice")}
+                onClick={() => handleSort("alertPrice")}
               >
-                Target Price {getSortIcon("targetPrice")}
+                Alert Price {getSortIcon("alertPrice")}
               </TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted"
@@ -551,6 +649,7 @@ export default function WatchlistManagementPage() {
               >
                 ATR Multiplier {getSortIcon("atrMultiplier")}
               </TableHead>
+              <TableHead>Owned</TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted"
                 onClick={() => handleSort("price")}
@@ -558,7 +657,7 @@ export default function WatchlistManagementPage() {
                 Current Price {getSortIcon("price")}
               </TableHead>
               <TableHead>Last Updated</TableHead>
-              {region === "US" && <TableHead>Analyst Rating</TableHead>}
+              {region === Region.US && <TableHead>Analyst Rating</TableHead>}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -568,25 +667,42 @@ export default function WatchlistManagementPage() {
                 {editingId === stock.symbol && editForm ? (
                   <>
                     <TableCell>
-                      <div className="flex items-center gap-0.5">
-                        <span className="font-bold whitespace-nowrap">{stock.symbol}</span>
-                        <span className="text-muted-foreground">-</span>
-                        <Input
-                          value={editForm.name}
-                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                          className="flex-1 min-w-[200px]"
-                        />
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs text-muted-foreground min-w-[50px]">
+                            Symbol:
+                          </Label>
+                          <Input
+                            value={editForm.symbol}
+                            onChange={(e) =>
+                              setEditForm({ ...editForm, symbol: e.target.value.toUpperCase() })
+                            }
+                            className="flex-1 min-w-[120px] font-bold uppercase"
+                            placeholder="AAPL"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs text-muted-foreground min-w-[50px]">
+                            Name:
+                          </Label>
+                          <Input
+                            value={editForm.name}
+                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                            className="flex-1 min-w-[200px]"
+                            placeholder="Apple Inc."
+                          />
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Input
                         type="number"
                         step="0.01"
-                        value={editForm.targetPrice || ""}
+                        value={editForm.alertPrice || ""}
                         onChange={(e) =>
                           setEditForm({
                             ...editForm,
-                            targetPrice: parseFloat(e.target.value) || undefined,
+                            alertPrice: parseFloat(e.target.value) || undefined,
                           })
                         }
                         className="w-28"
@@ -620,6 +736,19 @@ export default function WatchlistManagementPage() {
                       />
                     </TableCell>
                     <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={editForm.owned || false}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            owned: e.target.checked,
+                          })
+                        }
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                    </TableCell>
+                    <TableCell>
                       {stockPrices.has(stock.symbol) ? (
                         <div className="text-sm">
                           <div className="font-semibold">
@@ -639,7 +768,7 @@ export default function WatchlistManagementPage() {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
-                    {region === "US" && (
+                    {region === Region.US && (
                       <TableCell>
                         {recommendations.has(stock.symbol) ? (
                           getRecommendationBadge(recommendations.get(stock.symbol)!)
@@ -674,10 +803,65 @@ export default function WatchlistManagementPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {stock.targetPrice ? formatPrice(stock.targetPrice, stock.symbol) : "-"}
+                      {stock.alertPrice ? formatPrice(stock.alertPrice, stock.symbol) : "-"}
                     </TableCell>
                     <TableCell>{stock.atrPeriod || 14}</TableCell>
                     <TableCell>{(stock.atrMultiplier || 2.0).toFixed(1)}</TableCell>
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={stock.owned || false}
+                        onChange={async (e) => {
+                          const updatedStock = { ...stock, owned: e.target.checked };
+                          try {
+                            const user = getCurrentUser();
+                            if (!user) return;
+
+                            const response = await fetch(`/api/watchlist`, {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                userId: user.id,
+                                symbol: stock.symbol,
+                                stock: updatedStock,
+                              }),
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                              if (stock.region === Region.US) {
+                                setUsStocks((prev) =>
+                                  prev.map((s) => (s.symbol === stock.symbol ? updatedStock : s))
+                                );
+                              } else {
+                                setIndiaStocks((prev) =>
+                                  prev.map((s) => (s.symbol === stock.symbol ? updatedStock : s))
+                                );
+                              }
+                              toast({
+                                title: "Success",
+                                description: `${stock.symbol} ownership status updated`,
+                              });
+                            } else {
+                              toast({
+                                title: "Error",
+                                description: data.error || "Failed to update",
+                                variant: "destructive",
+                              });
+                            }
+                          } catch (error) {
+                            console.error("Failed to update owned status:", error);
+                            toast({
+                              title: "Error",
+                              description: "Failed to update ownership status",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                    </TableCell>
                     <TableCell>
                       {stockPrices.has(stock.symbol) ? (
                         <div className="text-sm">
@@ -700,7 +884,7 @@ export default function WatchlistManagementPage() {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
-                    {region === "US" && (
+                    {region === Region.US && (
                       <TableCell>
                         {recommendations.has(stock.symbol) ? (
                           getRecommendationBadge(recommendations.get(stock.symbol)!)
@@ -736,11 +920,31 @@ export default function WatchlistManagementPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Manage Watchlist</h1>
-          <p className="text-muted-foreground">
-            Add, edit, or remove stocks from your monitoring list
-          </p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Manage Watchlist</h1>
+            <p className="text-muted-foreground">
+              Add, edit, or remove stocks from your monitoring list
+            </p>
+          </div>
+          <Button
+            onClick={handleTriggerPriceCheck}
+            disabled={checkingAlerts}
+            variant="outline"
+            className="border-orange-300 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-950"
+          >
+            {checkingAlerts ? (
+              <>
+                <span className="animate-spin mr-2">⏳</span>
+                Checking Prices...
+              </>
+            ) : (
+              <>
+                <span className="mr-2">🔔</span>
+                Trigger Alerts
+              </>
+            )}
+          </Button>
         </div>
 
         <div className="grid gap-6 mb-6">
@@ -815,19 +1019,19 @@ export default function WatchlistManagementPage() {
                       id="region"
                       value={newStock.region}
                       onChange={(e) =>
-                        setNewStock({ ...newStock, region: e.target.value as "US" | "INDIA" })
+                        setNewStock({ ...newStock, region: e.target.value as Region })
                       }
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
-                      <option value="US">🇺🇸 United States</option>
-                      <option value="INDIA">🇮🇳 India</option>
+                      <option value={Region.US}>🇺🇸 United States</option>
+                      <option value={Region.INDIA}>🇮🇳 India</option>
                     </select>
                   </div>
                   <div>
                     <Label htmlFor="symbol">Stock Symbol *</Label>
                     <Input
                       id="symbol"
-                      placeholder={newStock.region === "US" ? "AAPL" : "RELIANCE.NS"}
+                      placeholder={newStock.region === Region.US ? "AAPL" : "RELIANCE.NS"}
                       value={newStock.symbol}
                       onChange={(e) =>
                         setNewStock({ ...newStock, symbol: e.target.value.toUpperCase() })
@@ -845,15 +1049,15 @@ export default function WatchlistManagementPage() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="targetPrice">Target Price (Optional)</Label>
+                    <Label htmlFor="alertPrice">Alert Price (Optional)</Label>
                     <Input
-                      id="targetPrice"
+                      id="alertPrice"
                       type="number"
                       step="0.01"
                       placeholder="150.00"
-                      value={newStock.targetPrice || ""}
+                      value={newStock.alertPrice || ""}
                       onChange={(e) =>
-                        setNewStock({ ...newStock, targetPrice: parseFloat(e.target.value) || 0 })
+                        setNewStock({ ...newStock, alertPrice: parseFloat(e.target.value) || 0 })
                       }
                     />
                   </div>
@@ -883,6 +1087,18 @@ export default function WatchlistManagementPage() {
                       }
                     />
                   </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="owned"
+                      type="checkbox"
+                      checked={newStock.owned}
+                      onChange={(e) => setNewStock({ ...newStock, owned: e.target.checked })}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                    <Label htmlFor="owned" className="cursor-pointer">
+                      I own this stock
+                    </Label>
+                  </div>
                 </div>
                 <div className="flex gap-2 mt-4">
                   <Button onClick={handleAddStock}>
@@ -910,9 +1126,9 @@ export default function WatchlistManagementPage() {
               {!isAddingNew && (
                 <Button
                   onClick={() => {
-                    setAddingRegion("US");
+                    setAddingRegion(Region.US);
                     setIsAddingNew(true);
-                    setNewStock({ ...newStock, region: "US" });
+                    setNewStock({ ...newStock, region: Region.US });
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -924,7 +1140,7 @@ export default function WatchlistManagementPage() {
               {isLoading ? (
                 <div className="text-center py-8 text-muted-foreground">Loading...</div>
               ) : (
-                renderStockTable(sortedUsStocks, "US")
+                renderStockTable(sortedUsStocks, Region.US)
               )}
             </CardContent>
           </Card>
@@ -942,9 +1158,9 @@ export default function WatchlistManagementPage() {
               {!isAddingNew && (
                 <Button
                   onClick={() => {
-                    setAddingRegion("INDIA");
+                    setAddingRegion(Region.INDIA);
                     setIsAddingNew(true);
-                    setNewStock({ ...newStock, region: "INDIA" });
+                    setNewStock({ ...newStock, region: Region.INDIA });
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -956,7 +1172,7 @@ export default function WatchlistManagementPage() {
               {isLoading ? (
                 <div className="text-center py-8 text-muted-foreground">Loading...</div>
               ) : (
-                renderStockTable(sortedIndiaStocks, "INDIA")
+                renderStockTable(sortedIndiaStocks, Region.INDIA)
               )}
             </CardContent>
           </Card>
@@ -983,7 +1199,7 @@ export default function WatchlistManagementPage() {
                 lower (1.5-2.0) for stable ones
               </li>
               <li>
-                • <strong>Target Price:</strong> Optional - set if you have a specific exit target
+                • <strong>Alert Price:</strong> Optional - set if you have a specific exit target
               </li>
               <li>• Changes are saved locally - batch job will use updated settings on next run</li>
             </ul>

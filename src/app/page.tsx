@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { NotificationPermission } from "@/components/notification-permission";
 import Link from "next/link";
 import { isAuthenticated, getCurrentUser, logout } from "@/lib/auth";
 
@@ -153,6 +154,11 @@ export default function Home() {
               Stock Monitoring Dashboard
             </h1>
           </div>
+        </div>
+
+        {/* Push Notification Permission */}
+        <div className="mb-6">
+          <NotificationPermission />
         </div>
 
         {/* Main Actions */}
