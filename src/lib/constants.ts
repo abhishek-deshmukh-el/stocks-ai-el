@@ -16,6 +16,7 @@ export interface WatchlistStock {
   notifyEmail?: string;
   notifyPhone?: string;
   region?: Region;
+  owned?: boolean;
 }
 
 /**

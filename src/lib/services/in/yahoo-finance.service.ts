@@ -45,7 +45,7 @@ export class YahooFinanceService {
       }
 
       // Convert to StockData format
-      const stockData: StockData[] = results.map((record: any) => ({
+      const stockData: StockData[] = results.map((record: HistoricalRowHistory) => ({
         date: record.date instanceof Date ? record.date.toISOString() : record.date,
         open: record.open,
         high: record.high,
