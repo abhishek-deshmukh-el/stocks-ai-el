@@ -22,7 +22,6 @@ export function NotificationPermission() {
   const [currentToken, setCurrentToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check initial permission status
     if (!("Notification" in window)) {
       setPermissionStatus("unsupported");
       return;
@@ -36,21 +35,18 @@ export function NotificationPermission() {
       setPermissionStatus("default");
     }
 
-    // Setup foreground message handler
     setupForegroundMessageHandler();
   }, []);
 
   const handleEnableNotifications = async () => {
     setIsLoading(true);
     try {
-      // Request permission and get token
       const token = await requestNotificationPermission();
 
       if (token) {
         setCurrentToken(token);
         setPermissionStatus("granted");
 
-        // Save token to server
         const user = getCurrentUser();
         if (user) {
           await saveFCMToken(token, user.id);
@@ -69,7 +65,6 @@ export function NotificationPermission() {
     setIsLoading(true);
     try {
       if (currentToken) {
-        // Remove token from server
         const user = getCurrentUser();
         if (user) {
           await removeFCMToken(currentToken, user.id);
@@ -94,8 +89,7 @@ export function NotificationPermission() {
               Notifications Not Supported
             </h3>
             <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-              Your browser doesn&apos;t support push notifications. Please use a modern browser like
-              Chrome, Firefox, or Edge.
+              Your browser doesn&apos;t support push notifications.
             </p>
           </div>
         </div>

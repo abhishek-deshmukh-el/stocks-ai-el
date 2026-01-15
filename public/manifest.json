@@ -1,0 +1,60 @@
+{
+  "name": "Stock AI - Trading Assistant",
+  "short_name": "Stock AI",
+  "description": "AI-powered stock trading assistant with real-time alerts and analysis",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Watchlist",
+      "short_name": "Watchlist",
+      "description": "View your stock watchlist",
+      "url": "/watchlist",
+      "icons": [
+        {
+          "src": "/favicon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "DMA Analyzer",
+      "short_name": "DMA",
+      "description": "Analyze stocks with DMA indicators",
+      "url": "/dma-analyzer",
+      "icons": [
+        {
+          "src": "/favicon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Volatility Stop",
+      "short_name": "Volatility",
+      "description": "Check volatility stop signals",
+      "url": "/volatility-stop",
+      "icons": [
+        {
+          "src": "/favicon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}

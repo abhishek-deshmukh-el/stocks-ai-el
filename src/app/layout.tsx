@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Stock Monitor - Automated Volatility Alerts",
   description: "Automated stock volatility monitoring with real-time WhatsApp alerts",
+  manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
