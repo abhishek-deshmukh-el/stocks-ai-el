@@ -495,29 +495,31 @@ export default function BatchJobPage() {
   // };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-3 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Automated Monitoring Dashboard</h1>
-          <p className="text-muted-foreground">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2">
+            Automated Monitoring Dashboard
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Real-time stock volatility monitoring with automatic API data fetching
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
           {/* Market Status Card */}
           <Card className="border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-2 pt-4">
+            <CardHeader className="pb-2 pt-3 sm:pt-4">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-blue-100 dark:bg-blue-900 rounded-md">
                   <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-base">Market Status</CardTitle>
+                  <CardTitle className="text-sm sm:text-base">Market Status</CardTitle>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pb-4">
+            <CardContent className="pb-3 sm:pb-4">
               <div className="space-y-2">
                 <div className="p-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-md border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center justify-between mb-1">
@@ -552,25 +554,25 @@ export default function BatchJobPage() {
 
           {/* Watchlist Card */}
           <Card className="border-l-4 border-l-purple-500 hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3 pt-4">
+            <CardHeader className="pb-2 sm:pb-3 pt-3 sm:pt-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-purple-100 dark:bg-purple-900 rounded-md">
                     <List className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">Watchlist</CardTitle>
+                    <CardTitle className="text-sm sm:text-base">Watchlist</CardTitle>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold bg-gradient-to-br from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  <div className="text-xl sm:text-2xl font-bold bg-gradient-to-br from-purple-600 to-pink-600 bg-clip-text text-transparent">
                     {userStocks.length}
                   </div>
-                  <p className="text-xs text-muted-foreground">Total</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Total</p>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pb-4">
+            <CardContent className="pb-3 sm:pb-4">
               <div className="space-y-2">
                 <div className="p-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-md border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center justify-between">
@@ -597,18 +599,18 @@ export default function BatchJobPage() {
           </Card>
 
           {/* Actions Card */}
-          <Card className="border-l-4 border-l-green-500 hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-2 pt-4">
+          <Card className="border-l-4 border-l-green-500 hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-1">
+            <CardHeader className="pb-2 pt-3 sm:pt-4">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-green-100 dark:bg-green-900 rounded-md">
                   <Activity className="w-4 h-4 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-base">Quick Actions</CardTitle>
+                  <CardTitle className="text-sm sm:text-base">Quick Actions</CardTitle>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3 pb-4">
+            <CardContent className="space-y-2 sm:space-y-3 pb-3 sm:pb-4">
               {/* Status Section */}
               <div className="p-2 bg-muted/50 rounded-md">
                 <div className="flex items-center justify-between mb-1">
@@ -679,24 +681,30 @@ export default function BatchJobPage() {
         </div>
 
         {results && (
-          <Card className="mb-6">
+          <Card className="mb-4 sm:mb-6">
             <CardHeader>
-              <CardTitle>Last Run Results</CardTitle>
-              <CardDescription>Batch job execution summary</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">Last Run Results</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Batch job execution summary
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-muted p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold">{results.stocksProcessed}</div>
-                  <div className="text-sm text-muted-foreground">Processed</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="bg-muted p-3 sm:p-4 rounded-lg text-center">
+                  <div className="text-xl sm:text-2xl font-bold">{results.stocksProcessed}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Processed</div>
                 </div>
-                <div className="bg-muted p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-green-600">{results.alertsSent}</div>
-                  <div className="text-sm text-muted-foreground">Alerts Sent</div>
+                <div className="bg-muted p-3 sm:p-4 rounded-lg text-center">
+                  <div className="text-xl sm:text-2xl font-bold text-green-600">
+                    {results.alertsSent}
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Alerts Sent</div>
                 </div>
-                <div className="bg-muted p-4 rounded-lg text-center">
-                  <div className="text-2xl font-bold text-red-600">{results.errors.length}</div>
-                  <div className="text-sm text-muted-foreground">Errors</div>
+                <div className="bg-muted p-3 sm:p-4 rounded-lg text-center">
+                  <div className="text-xl sm:text-2xl font-bold text-red-600">
+                    {results.errors.length}
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Errors</div>
                 </div>
               </div>
 
@@ -716,12 +724,12 @@ export default function BatchJobPage() {
           </Card>
         )}
 
-        <Card>
+        <Card className="mb-4 sm:mb-6">
           <CardHeader>
-            <CardTitle>US Stocks</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">US Stocks</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="mb-4">
+            <div className="mb-3 sm:mb-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
@@ -750,7 +758,7 @@ export default function BatchJobPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>India Stocks</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">India Stocks</CardTitle>
           </CardHeader>
           <CardContent>
             <StockTable

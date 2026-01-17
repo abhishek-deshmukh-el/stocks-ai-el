@@ -73,23 +73,26 @@ export default function DMAAnalyzer() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>📈 DMA Strategy Analyzer</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl sm:text-2xl">📈 DMA Strategy Analyzer</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
             Analyze stocks using Akshat&apos;s Swing Trading Strategy
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 mb-3 sm:mb-4">
             <div>
-              <Label htmlFor="symbol">Stock Symbol</Label>
+              <Label htmlFor="symbol" className="text-sm">
+                Stock Symbol
+              </Label>
               <Input
                 id="symbol"
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                 placeholder="AAPL"
+                className="text-base"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     handleAnalyze();
@@ -100,13 +103,13 @@ export default function DMAAnalyzer() {
           </div>
 
           <div className="flex justify-center">
-            <Button onClick={handleAnalyze} disabled={loading}>
+            <Button onClick={handleAnalyze} disabled={loading} className="w-full sm:w-auto">
               {loading ? "Analyzing..." : "Analyze DMA Signal"}
             </Button>
           </div>
 
           {error && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-600">
+            <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
               {error}
             </div>
           )}
@@ -117,37 +120,47 @@ export default function DMAAnalyzer() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle>DMA Analysis - {stockSymbol}</CardTitle>
-              <CardDescription>Akshat&apos;s Swing Trading Strategy</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">DMA Analysis - {stockSymbol}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Akshat&apos;s Swing Trading Strategy
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Current Price</div>
-                  <div className="text-2xl font-bold">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                    Current Price
+                  </div>
+                  <div className="text-xl sm:text-2xl font-bold">
                     {formatPrice(data.currentPrice, stockSymbol)}
                   </div>
                 </div>
-                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">50 DMA</div>
-                  <div className="text-2xl font-bold">{formatPrice(data.dma50, stockSymbol)}</div>
-                  <div className="text-xs text-gray-500 mt-1">
+                <div className="p-3 sm:p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">50 DMA</div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {formatPrice(data.dma50, stockSymbol)}
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-gray-500 mt-1">
                     {data.distanceFrom50DMAPercent > 0 ? "+" : ""}
                     {data.distanceFrom50DMAPercent.toFixed(1)}%
                   </div>
                 </div>
-                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">150 DMA</div>
-                  <div className="text-2xl font-bold">{formatPrice(data.dma150, stockSymbol)}</div>
-                  <div className="text-xs text-gray-500 mt-1">
+                <div className="p-3 sm:p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">150 DMA</div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {formatPrice(data.dma150, stockSymbol)}
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-gray-500 mt-1">
                     {data.distanceFrom150DMAPercent > 0 ? "+" : ""}
                     {data.distanceFrom150DMAPercent.toFixed(1)}%
                   </div>
                 </div>
-                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">200 DMA</div>
-                  <div className="text-2xl font-bold">{formatPrice(data.dma200, stockSymbol)}</div>
-                  <div className="text-xs text-gray-500 mt-1">
+                <div className="p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">200 DMA</div>
+                  <div className="text-xl sm:text-2xl font-bold">
+                    {formatPrice(data.dma200, stockSymbol)}
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-gray-500 mt-1">
                     {data.distanceFrom200DMAPercent > 0 ? "+" : ""}
                     {data.distanceFrom200DMAPercent.toFixed(1)}%
                   </div>
@@ -155,13 +168,17 @@ export default function DMAAnalyzer() {
               </div>
 
               {/* Trend and Signal */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Trend State</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    Trend State
+                  </div>
                   {getTrendBadge(data.trendState)}
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Signal</div>
+                <div className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    Signal
+                  </div>
                   <HoverCard>
                     <HoverCardTrigger asChild tabIndex={0}>
                       <Badge
@@ -193,9 +210,9 @@ export default function DMAAnalyzer() {
               </div>
 
               {/* Detailed Recommendation */}
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg">
-                <h4 className="font-semibold mb-2">{data.recommendation}</h4>
-                <div className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+              <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg">
+                <h4 className="font-semibold mb-2 text-sm sm:text-base">{data.recommendation}</h4>
+                <div className="space-y-1 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                   {data.details.map((detail, idx) => (
                     <div key={idx}>{detail}</div>
                   ))}
@@ -203,9 +220,11 @@ export default function DMAAnalyzer() {
               </div>
 
               {/* Strategy Information */}
-              <div className="mt-6 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <h4 className="font-semibold mb-3 text-sm">About Akshat&apos;s Swing Strategy</h4>
-                <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+              <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <h4 className="font-semibold mb-2 sm:mb-3 text-xs sm:text-sm">
+                  About Akshat&apos;s Swing Strategy
+                </h4>
+                <div className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
                   <div>
                     <strong className="text-green-600 dark:text-green-400">🟢 BUY Signal:</strong>{" "}
                     When price touches 150 DMA (±2%) and is above 200 DMA - ideal entry point
