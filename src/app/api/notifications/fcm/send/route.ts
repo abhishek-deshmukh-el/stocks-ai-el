@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendStockAlertNotification } from "@/lib/fcm";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
-import { Region } from "@/lib/constants";
 
 /**
  * POST /api/notifications/fcm/send

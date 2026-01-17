@@ -19,12 +19,6 @@ import {
   getSignalColorClassAkshat,
 } from "@/lib/dmaAkshat";
 
-interface DMAAnalyzerResponse {
-  success: boolean;
-  symbol: string;
-  data: DMAAnalysisAkshat;
-}
-
 export default function DMAAnalyzer() {
   const [symbol, setSymbol] = useState("AAPL");
   const [loading, setLoading] = useState(false);

@@ -274,13 +274,13 @@ export default function BatchJobPage() {
     return filterAndSortStocks(
       userStocks.filter((stock: WatchlistItem) => stock.region === Region.US && stock.owned)
     );
-  }, [userStocks, searchQuery, sortField, sortDirection]);
+  }, [userStocks, searchQuery, sortField, sortDirection, filterAndSortStocks]);
 
   const filteredIndiaStocks = useMemo(() => {
     return filterAndSortStocks(
       userStocks.filter((stock: WatchlistItem) => stock.region === Region.INDIA && stock.owned)
     );
-  }, [userStocks, searchQuery, sortField, sortDirection]);
+  }, [userStocks, searchQuery, sortField, sortDirection, filterAndSortStocks]);
 
   const calculateVolatilityStops = async () => {
     setIsCalculating(true);
