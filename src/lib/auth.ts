@@ -2,19 +2,7 @@
  * Authentication utilities
  */
 
-import { Region } from "./constants";
-
-export interface WatchlistItem {
-  symbol: string;
-  name: string;
-  alertPrice?: number;
-  atrPeriod: number;
-  atrMultiplier: number;
-  region: Region;
-  _id?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+import { WatchlistItem } from "@/models/User";
 
 export interface UserInfo {
   id: string;

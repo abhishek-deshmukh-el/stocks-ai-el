@@ -7,19 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useToast } from "@/hooks/use-toast";
-import { Region, type WatchlistStock, formatPrice } from "@/lib/constants";
+import { Region, type WatchlistStock } from "@/lib/constants";
 import { isAuthenticated, getCurrentUser } from "@/lib/auth";
-import { Trash2, Plus, Edit2, X, Check, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, X, Check, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { StockTableView } from "@/components/stock-table-view";
 
 interface StockPriceData {
   price: number;
@@ -612,318 +605,39 @@ export default function WatchlistManagementPage() {
   const totalWithTargets = [...usStocks, ...indiaStocks].filter((s) => s.alertPrice).length;
 
   const renderStockTable = (stocks: WatchlistStock[], region: Region) => {
-    if (stocks.length === 0) {
-      return (
-        <div className="text-center py-8 text-muted-foreground">
-          No {region} stocks in watchlist. Add your first stock!
-        </div>
-      );
-    }
-
     return (
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead
-                className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort("symbol")}
-              >
-                Stock {getSortIcon("symbol")}
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort("alertPrice")}
-              >
-                Alert Price {getSortIcon("alertPrice")}
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort("atrPeriod")}
-              >
-                ATR Period {getSortIcon("atrPeriod")}
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort("atrMultiplier")}
-              >
-                ATR Multiplier {getSortIcon("atrMultiplier")}
-              </TableHead>
-              <TableHead>Owned</TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted"
-                onClick={() => handleSort("price")}
-              >
-                Current Price {getSortIcon("price")}
-              </TableHead>
-              <TableHead>Last Updated</TableHead>
-              {region === Region.US && <TableHead>Analyst Rating</TableHead>}
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {stocks.map((stock) => (
-              <TableRow key={stock.symbol}>
-                {editingId === stock.symbol && editForm ? (
-                  <>
-                    <TableCell>
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                          <Label className="text-xs text-muted-foreground min-w-[50px]">
-                            Symbol:
-                          </Label>
-                          <Input
-                            value={editForm.symbol}
-                            onChange={(e) =>
-                              setEditForm({ ...editForm, symbol: e.target.value.toUpperCase() })
-                            }
-                            className="flex-1 min-w-[120px] font-bold uppercase"
-                            placeholder="AAPL"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Label className="text-xs text-muted-foreground min-w-[50px]">
-                            Name:
-                          </Label>
-                          <Input
-                            value={editForm.name}
-                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                            className="flex-1 min-w-[200px]"
-                            placeholder="Apple Inc."
-                          />
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={editForm.alertPrice || ""}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            alertPrice: parseFloat(e.target.value) || undefined,
-                          })
-                        }
-                        className="w-28"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={editForm.atrPeriod || 14}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            atrPeriod: parseInt(e.target.value) || 14,
-                          })
-                        }
-                        className="w-20"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={editForm.atrMultiplier || 2.0}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            atrMultiplier: parseFloat(e.target.value) || 2.0,
-                          })
-                        }
-                        className="w-20"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <input
-                        type="checkbox"
-                        checked={editForm.owned || false}
-                        onChange={(e) =>
-                          setEditForm({
-                            ...editForm,
-                            owned: e.target.checked,
-                          })
-                        }
-                        className="w-4 h-4 cursor-pointer"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {stockPrices.has(stock.symbol) ? (
-                        <div className="text-sm">
-                          <div className="font-semibold">
-                            {formatPrice(stockPrices.get(stock.symbol)!.price, stock.symbol)}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {stockPrices.has(stock.symbol) ? (
-                        <div className="text-xs text-muted-foreground">
-                          {stockPrices.get(stock.symbol)!.fetchedAt.toLocaleTimeString()}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    {region === Region.US && (
-                      <TableCell>
-                        {recommendations.has(stock.symbol) ? (
-                          getRecommendationBadge(recommendations.get(stock.symbol)!)
-                        ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                    )}
-                    <TableCell className="text-right">
-                      <div className="flex gap-1 justify-end">
-                        <Button size="sm" variant="default" onClick={handleSaveEdit}>
-                          <Check className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </>
-                ) : (
-                  <>
-                    <TableCell>
-                      <div className="flex items-center gap-0.5">
-                        <span className="font-bold whitespace-nowrap">{stock.symbol}</span>
-                        <span className="text-muted-foreground">-</span>
-                        <span
-                          className="text-sm text-muted-foreground truncate max-w-[200px]"
-                          title={stock.name}
-                        >
-                          {stock.name}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {stock.alertPrice ? formatPrice(stock.alertPrice, stock.symbol) : "-"}
-                    </TableCell>
-                    <TableCell>{stock.atrPeriod || 14}</TableCell>
-                    <TableCell>{(stock.atrMultiplier || 2.0).toFixed(1)}</TableCell>
-                    <TableCell>
-                      <input
-                        type="checkbox"
-                        checked={stock.owned || false}
-                        onChange={async (e) => {
-                          const updatedStock = { ...stock, owned: e.target.checked };
-                          try {
-                            const user = getCurrentUser();
-                            if (!user) return;
-
-                            const response = await fetch(`/api/watchlist`, {
-                              method: "PUT",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({
-                                userId: user.id,
-                                symbol: stock.symbol,
-                                stock: updatedStock,
-                              }),
-                            });
-
-                            const data = await response.json();
-
-                            if (data.success) {
-                              if (stock.region === Region.US) {
-                                setUsStocks((prev) =>
-                                  prev.map((s) => (s.symbol === stock.symbol ? updatedStock : s))
-                                );
-                              } else {
-                                setIndiaStocks((prev) =>
-                                  prev.map((s) => (s.symbol === stock.symbol ? updatedStock : s))
-                                );
-                              }
-                              toast({
-                                title: "Success",
-                                description: `${stock.symbol} ownership status updated`,
-                              });
-                            } else {
-                              toast({
-                                title: "Error",
-                                description: data.error || "Failed to update",
-                                variant: "destructive",
-                              });
-                            }
-                          } catch (error) {
-                            console.error("Failed to update owned status:", error);
-                            toast({
-                              title: "Error",
-                              description: "Failed to update ownership status",
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                        className="w-4 h-4 cursor-pointer"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {stockPrices.has(stock.symbol) ? (
-                        <div className="text-sm">
-                          <div className="font-semibold">
-                            {formatPrice(stockPrices.get(stock.symbol)!.price, stock.symbol)}
-                          </div>
-                        </div>
-                      ) : fetchingPrices ? (
-                        <span className="text-xs text-muted-foreground">Loading...</span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {stockPrices.has(stock.symbol) ? (
-                        <div className="text-xs text-muted-foreground">
-                          {stockPrices.get(stock.symbol)!.fetchedAt.toLocaleTimeString()}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    {region === Region.US && (
-                      <TableCell>
-                        {recommendations.has(stock.symbol) ? (
-                          getRecommendationBadge(recommendations.get(stock.symbol)!)
-                        ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                    )}
-                    <TableCell className="text-right">
-                      <div className="flex gap-1 justify-end">
-                        <Button size="sm" variant="ghost" onClick={() => handleEditStock(stock)}>
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDeleteStock(stock.symbol, region)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </>
-                )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <StockTableView
+        stocks={stocks}
+        region={region}
+        editingId={editingId}
+        editForm={editForm}
+        setEditForm={setEditForm}
+        handleEditStock={handleEditStock}
+        handleDeleteStock={handleDeleteStock}
+        stockPrices={stockPrices}
+        fetchingPrices={fetchingPrices}
+        handleSaveEdit={handleSaveEdit}
+        handleCancelEdit={handleCancelEdit}
+        setUsStocks={setUsStocks}
+        setIndiaStocks={setIndiaStocks}
+        toast={toast}
+        recommendations={recommendations}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        handleSort={handleSort}
+      />
     );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-3 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8 flex items-start justify-between">
+        <div className="mb-4 sm:mb-6 lg:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-4xl font-bold mb-2">Manage Watchlist</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2">
+              Manage Watchlist
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Add, edit, or remove stocks from your monitoring list
             </p>
           </div>
@@ -931,74 +645,75 @@ export default function WatchlistManagementPage() {
             onClick={handleTriggerPriceCheck}
             disabled={checkingAlerts}
             variant="outline"
-            className="border-orange-300 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-950"
+            size="sm"
+            className="w-full sm:w-auto border-orange-300 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-950"
           >
             {checkingAlerts ? (
               <>
                 <span className="animate-spin mr-2">⏳</span>
-                Checking Prices...
+                <span className="text-xs sm:text-sm">Checking...</span>
               </>
             ) : (
               <>
                 <span className="mr-2">🔔</span>
-                Trigger Alerts
+                <span className="text-xs sm:text-sm">Trigger Alerts</span>
               </>
             )}
           </Button>
         </div>
 
-        <div className="grid gap-6 mb-6">
+        <div className="grid gap-4 sm:gap-6 mb-4 sm:mb-6">
           {/* Quick Stats - Modern Card Grid */}
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
             <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/20 border-purple-200 dark:border-purple-800">
-              <CardContent className="p-6">
+              <CardContent className="p-2 sm:p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1">
+                    <p className="text-[10px] font-medium text-purple-600 dark:text-purple-400 mb-0.5">
                       Total Stocks
                     </p>
-                    <div className="text-3xl font-bold text-purple-900 dark:text-purple-100">
+                    <div className="text-lg font-bold text-purple-900 dark:text-purple-100">
                       {totalStocks}
                     </div>
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-purple-200 dark:bg-purple-800 flex items-center justify-center">
-                    <span className="text-2xl">📊</span>
+                  <div className="w-7 h-7 rounded-full bg-purple-200 dark:bg-purple-800 flex items-center justify-center">
+                    <span className="text-lg">📊</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200 dark:border-blue-800">
-              <CardContent className="p-6">
+              <CardContent className="p-2 sm:p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">
+                    <p className="text-[10px] font-medium text-blue-600 dark:text-blue-400 mb-0.5">
                       US Stocks
                     </p>
-                    <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+                    <div className="text-lg font-bold text-blue-900 dark:text-blue-100">
                       {usStocks.length}
                     </div>
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-blue-200 dark:bg-blue-800 flex items-center justify-center">
-                    <span className="text-2xl">🇺🇸</span>
+                  <div className="w-7 h-7 rounded-full bg-blue-200 dark:bg-blue-800 flex items-center justify-center">
+                    <span className="text-lg">🇺🇸</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/20 border-orange-200 dark:border-orange-800">
-              <CardContent className="p-6">
+              <CardContent className="p-2 sm:p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-orange-600 dark:text-orange-400 mb-1">
+                    <p className="text-[10px] font-medium text-orange-600 dark:text-orange-400 mb-0.5">
                       India Stocks
                     </p>
-                    <div className="text-3xl font-bold text-orange-900 dark:text-orange-100">
+                    <div className="text-lg font-bold text-orange-900 dark:text-orange-100">
                       {indiaStocks.length}
                     </div>
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-orange-200 dark:bg-orange-800 flex items-center justify-center">
-                    <span className="text-2xl">🇮🇳</span>
+                  <div className="w-7 h-7 rounded-full bg-orange-200 dark:bg-orange-800 flex items-center justify-center">
+                    <span className="text-lg">🇮🇳</span>
                   </div>
                 </div>
               </CardContent>
@@ -1008,11 +723,13 @@ export default function WatchlistManagementPage() {
           {isAddingNew && (
             <Card>
               <CardHeader>
-                <CardTitle>Add New Stock</CardTitle>
-                <CardDescription>Configure stock monitoring parameters</CardDescription>
+                <CardTitle className="text-lg sm:text-xl">Add New Stock</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
+                  Configure stock monitoring parameters
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <Label htmlFor="region">Region *</Label>
                     <select
@@ -1100,12 +817,16 @@ export default function WatchlistManagementPage() {
                     </Label>
                   </div>
                 </div>
-                <div className="flex gap-2 mt-4">
-                  <Button onClick={handleAddStock}>
+                <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                  <Button className="w-full sm:w-auto" onClick={handleAddStock}>
                     <Check className="w-4 h-4 mr-2" />
                     Add Stock
                   </Button>
-                  <Button variant="outline" onClick={() => setIsAddingNew(false)}>
+                  <Button
+                    className="w-full sm:w-auto"
+                    variant="outline"
+                    onClick={() => setIsAddingNew(false)}
+                  >
                     <X className="w-4 h-4 mr-2" />
                     Cancel
                   </Button>
@@ -1116,15 +837,19 @@ export default function WatchlistManagementPage() {
 
           {/* US Stocks Section */}
           <Card className="border-l-4 border-l-blue-500">
-            <CardHeader className="flex flex-row items-center justify-between bg-blue-50 dark:bg-blue-950/20">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 bg-blue-50 dark:bg-blue-950/20">
               <div>
-                <CardTitle className="flex items-center gap-2">US Stocks</CardTitle>
-                <CardDescription>
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  US Stocks
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
                   {usStocks.length} US stock{usStocks.length !== 1 ? "s" : ""} being monitored
                 </CardDescription>
               </div>
               {!isAddingNew && (
                 <Button
+                  size="sm"
+                  className="w-full sm:w-auto"
                   onClick={() => {
                     setAddingRegion(Region.US);
                     setIsAddingNew(true);
@@ -1132,11 +857,11 @@ export default function WatchlistManagementPage() {
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Add US Stock
+                  <span className="text-xs sm:text-sm">Add US Stock</span>
                 </Button>
               )}
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 overflow-hidden">
               {isLoading ? (
                 <div className="text-center py-8 text-muted-foreground">Loading...</div>
               ) : (
@@ -1147,16 +872,20 @@ export default function WatchlistManagementPage() {
 
           {/* India Stocks Section */}
           <Card className="border-l-4 border-l-orange-500">
-            <CardHeader className="flex flex-row items-center justify-between bg-orange-50 dark:bg-orange-950/20">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 bg-orange-50 dark:bg-orange-950/20">
               <div>
-                <CardTitle className="flex items-center gap-2">India Stocks</CardTitle>
-                <CardDescription>
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  India Stocks
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
                   {indiaStocks.length} Indian stock{indiaStocks.length !== 1 ? "s" : ""} being
                   monitored
                 </CardDescription>
               </div>
               {!isAddingNew && (
                 <Button
+                  size="sm"
+                  className="w-full sm:w-auto"
                   onClick={() => {
                     setAddingRegion(Region.INDIA);
                     setIsAddingNew(true);
@@ -1164,11 +893,11 @@ export default function WatchlistManagementPage() {
                   }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Add India Stock
+                  <span className="text-xs sm:text-sm">Add India Stock</span>
                 </Button>
               )}
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 overflow-hidden">
               {isLoading ? (
                 <div className="text-center py-8 text-muted-foreground">Loading...</div>
               ) : (

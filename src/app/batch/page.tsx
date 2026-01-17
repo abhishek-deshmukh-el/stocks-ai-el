@@ -7,11 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { isAuthenticated, getCurrentUser, WatchlistItem } from "@/lib/auth";
+import { isAuthenticated, getCurrentUser } from "@/lib/auth";
 import { DMAAnalysisAkshat } from "@/lib/dmaAkshat";
 import { StockTable } from "@/components/stock-table";
 import { Search, TrendingUp, List, Activity, Clock } from "lucide-react";
 import { Region } from "@/lib/constants";
+import { WatchlistItem } from "@/models/User";
 
 interface StockPriceData {
   price: number;
@@ -271,13 +272,13 @@ export default function BatchJobPage() {
 
   const filteredUsStocks = useMemo(() => {
     return filterAndSortStocks(
-      userStocks.filter((stock: WatchlistItem) => stock.region === Region.US)
+      userStocks.filter((stock: WatchlistItem) => stock.region === Region.US && stock.owned)
     );
   }, [userStocks, searchQuery, sortField, sortDirection]);
 
   const filteredIndiaStocks = useMemo(() => {
     return filterAndSortStocks(
-      userStocks.filter((stock: WatchlistItem) => stock.region === Region.INDIA)
+      userStocks.filter((stock: WatchlistItem) => stock.region === Region.INDIA && stock.owned)
     );
   }, [userStocks, searchQuery, sortField, sortDirection]);
 

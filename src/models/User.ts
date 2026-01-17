@@ -5,7 +5,7 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 import { Region } from "@/lib/constants";
 
-export interface IWatchlistItem {
+export interface WatchlistItem {
   symbol: string;
   name: string;
   alertPrice?: number;
@@ -13,6 +13,9 @@ export interface IWatchlistItem {
   atrMultiplier: number;
   region: Region;
   owned?: boolean;
+  _id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface IUser extends Document {
@@ -21,8 +24,8 @@ export interface IUser extends Document {
   fcmTokens: string[]; // Firebase Cloud Messaging tokens for push notifications
   createdAt: Date;
   updatedAt: Date;
-  usStocks: IWatchlistItem[];
-  indiaStocks: IWatchlistItem[];
+  usStocks: WatchlistItem[];
+  indiaStocks: WatchlistItem[];
 }
 
 const WatchlistItemSchema = new Schema(

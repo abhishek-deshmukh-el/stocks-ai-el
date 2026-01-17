@@ -115,7 +115,6 @@ export class TwelveDataService {
 
         console.log(`🔍 [Twelve Data] Fetching historical data for: ${symbol}`);
         const url = `${API_CONFIG.TWELVE_DATA.BASE_URL}/time_series?symbol=${symbol}&interval=1day&outputsize=${days}&apikey=${this.apiKey}`;
-        console.log(`📡 Fetching URL: ${url}`);
 
         const response = await fetch(url);
         const data = await response.json();

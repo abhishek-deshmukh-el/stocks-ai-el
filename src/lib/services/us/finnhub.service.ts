@@ -31,7 +31,6 @@ export class FinnhubService {
     try {
       console.log(`🔍 [Finnhub] Fetching price for: ${symbol}`);
       const url = `${API_CONFIG.FINNHUB.BASE_URL}/quote?symbol=${symbol}&token=${this.apiKey}`;
-      console.log(`📡 Fetching URL: ${url}`);
 
       const response = await fetch(url);
       const data = await response.json();
@@ -65,7 +64,6 @@ export class FinnhubService {
       const from = Math.floor((Date.now() - days * 24 * 60 * 60 * 1000) / 1000);
 
       const url = `${API_CONFIG.FINNHUB.BASE_URL}/stock/candle?symbol=${symbol}&resolution=D&from=${from}&to=${to}&token=${this.apiKey}`;
-      console.log(`📡 Fetching URL: ${url}`);
 
       const response = await fetch(url);
       const data = await response.json();
@@ -114,7 +112,6 @@ export class FinnhubService {
       console.log(`🔍 [Finnhub] Fetching recommendations for: ${symbol}`);
 
       const url = `${API_CONFIG.FINNHUB.BASE_URL}/stock/recommendation?symbol=${symbol}&token=${this.apiKey}`;
-      console.log(`📡 Fetching URL: ${url}`);
 
       const response = await fetch(url);
 
