@@ -4,6 +4,9 @@ import { BATCH_CONFIG, formatPrice } from "@/lib/constants";
 import { stockOrchestrator } from "@/lib/services/stock-orchestrator.service";
 import { sendWhatsApp } from "@/lib/whatsapp";
 import { Region } from "@/lib/constants";
+import { sendVolatilityAlertNotification } from "@/lib/fcm";
+import connectDB from "@/lib/mongodb";
+import User from "@/models/User";
 
 /**
  * API Route: Calculate Volatility Stop
@@ -137,16 +140,29 @@ export async function POST(request: Request) {
       }
     }
 
-    // Send WhatsApp alerts for SELL recommendations
+    // Send WhatsApp and Push Notification alerts for SELL recommendations
     const sellRecommendations = results.filter(
       (result: any) => result.success && result.volatilityStop?.recommendation === "SELL"
     );
 
     let alertsSent = 0;
+    let pushNotificationsSent = 0;
+
     if (sellRecommendations.length > 0) {
-      console.log(
-        `🚨 Sending WhatsApp alerts for ${sellRecommendations.length} SELL recommendations`
-      );
+      console.log(`🚨 Sending alerts for ${sellRecommendations.length} SELL recommendations`);
+
+      // Get user's FCM tokens for push notifications
+      let userFcmTokens: string[] = [];
+      try {
+        await connectDB();
+        const user = await User.findOne({ phoneNumber });
+        if (user && user.fcmTokens && user.fcmTokens.length > 0) {
+          userFcmTokens = user.fcmTokens;
+          console.log(`📱 Found ${userFcmTokens.length} FCM tokens for user`);
+        }
+      } catch (error) {
+        console.error(`⚠️ Failed to fetch user FCM tokens:`, error);
+      }
 
       for (const stock of sellRecommendations) {
         try {
@@ -156,15 +172,43 @@ export async function POST(request: Request) {
             continue;
           }
 
-          // Send simple notification using sendWhatsApp
+          // Determine region for the stock
+          const stockRegion =
+            stocks.find((s: any) => s.symbol === stock.symbol)?.region || Region.US;
+
+          // Send WhatsApp notification
           const simpleMessage = `🚨 SELL Alert\n\nSymbol: ${stock.symbol}\nCurrent Price: ${formatPrice(stock.currentPrice, stock.symbol)}\nVolatility Stop: ${formatPrice(stock.volatilityStop.stopLoss, stock.symbol)}\nDistance: ${stock.volatilityStop.stopLossPercentage.toFixed(1)}%\n\nRecommendation: SELL`;
 
           await sendWhatsApp({ to: phoneNumber, message: simpleMessage });
-
           alertsSent++;
-          console.log(`✅ WhatsApp alerts sent for ${stock.symbol}`);
+          console.log(`✅ WhatsApp alert sent for ${stock.symbol}`);
+
+          // Send Push Notification if user has FCM tokens
+          if (userFcmTokens.length > 0) {
+            try {
+              const pushResult = await sendVolatilityAlertNotification(
+                userFcmTokens,
+                stock.symbol,
+                stock.currentPrice,
+                stock.volatilityStop.stopLoss,
+                stock.volatilityStop.stopLossPercentage,
+                stock.atr,
+                stock.volatilityStop.recommendation,
+                stockRegion
+              );
+
+              if (pushResult.successCount > 0) {
+                pushNotificationsSent++;
+                console.log(
+                  `✅ Push notification sent for ${stock.symbol} to ${pushResult.successCount} devices`
+                );
+              }
+            } catch (pushError) {
+              console.error(`⚠️ Failed to send push notification for ${stock.symbol}:`, pushError);
+            }
+          }
         } catch (error) {
-          console.error(`❌ Failed to send WhatsApp for ${stock.symbol}:`, error);
+          console.error(`❌ Failed to send alerts for ${stock.symbol}:`, error);
         }
       }
     }
@@ -177,6 +221,7 @@ export async function POST(request: Request) {
       totalSuccessful: results.filter((r) => r.success).length,
       totalFailed: errors.length,
       alertsSent,
+      pushNotificationsSent,
       calculatedAt: new Date().toISOString(),
     });
   } catch (error) {

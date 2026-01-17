@@ -1,17 +1,44 @@
 # Stock Volatility Monitoring System
 
-A Next.js application for automated stock volatility monitoring with WhatsApp alerts. Built with Next.js 15, TypeScript, Tailwind CSS, and shadcn/ui components.
+A Next.js application for automated stock volatility monitoring with **Push Notifications** and WhatsApp alerts. Built with Next.js 15, TypeScript, Tailwind CSS, shadcn/ui, and Firebase Cloud Messaging.
 
 ## 🎯 Project Overview
 
 This is an **automated stock monitoring system** that:
 
 - Monitors 20 stocks (10 US + 10 India) from a watchlist
-- Runs hourly batch jobs to calculate volatility stops using ATR (Average True Range)
-- Sends WhatsApp notifications when volatility thresholds are triggered
+- Runs automated batch jobs to calculate volatility stops using ATR (Average True Range)
+- **🔔 Sends FREE push notifications via Firebase Cloud Messaging (FCM)** - even when app is closed!
+- Sends WhatsApp notifications (alternative/backup)
 - Provides a web dashboard for managing watchlists and monitoring batch jobs
 - **Advanced Volatility Stop Analysis** with historical data and trailing stops
 - **Requires authentication** - users must login with name and WhatsApp number
+
+## 🆕 NEW: Firebase Cloud Messaging (FCM) Integration
+
+**Professional push notifications are now available!** Get instant stock alerts on your desktop or mobile device, even when the app is closed.
+
+### ✨ Features
+
+- ✅ **100% FREE** - No per-message cost
+- ✅ Works on **desktop and mobile** (Chrome, Firefox, Safari 16.4+)
+- ✅ **Background notifications** - Receive alerts even when app is closed
+- ✅ **Multi-device support** - Get alerts on all your devices
+- ✅ **Native system notifications** - Professional and reliable
+
+### 📚 Setup Guides
+
+- **[FCM_SETUP_GUIDE.md](./FCM_SETUP_GUIDE.md)** - Complete Firebase setup instructions
+- **[CRON_SETUP_GUIDE.md](./CRON_SETUP_GUIDE.md)** - Automated price checking setup
+- **[FCM_IMPLEMENTATION_SUMMARY.md](./FCM_IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
+
+### 🚀 Quick Start for Push Notifications
+
+1. Set up Firebase project (see [FCM_SETUP_GUIDE.md](./FCM_SETUP_GUIDE.md))
+2. Add Firebase environment variables to `.env.local`
+3. Visit `/dashboard` and click "Enable Notifications"
+4. Allow browser notifications
+5. Done! You'll receive alerts automatically
 
 ## 🔑 Authentication System
 
@@ -70,7 +97,7 @@ For detailed setup instructions, see [MONGODB_SETUP.md](./MONGODB_SETUP.md)
 - **CRUD Operations**: Add, edit, delete stocks from watchlist
 - **Customizable Parameters**:
   - Stock symbol and name
-  - Target price (optional)
+  - Alert price (optional)
   - ATR period (default: 14)
   - ATR multiplier (default: 2.0)
 - **Real-time Updates**: Changes reflect immediately in batch jobs
@@ -174,7 +201,7 @@ Each stock includes:
 
 - `symbol`: Stock ticker
 - `name`: Company name
-- `targetPrice`: Optional price target
+- `alertPrice`: Optional price target
 - `atrPeriod`: ATR calculation period (default: 14)
 - `atrMultiplier`: Stop distance multiplier (default: 2.0)
 - `region`: 'US' or 'INDIA'
@@ -317,7 +344,7 @@ Edit `src/lib/constants.ts` to modify:
 - Stock list
 - ATR periods
 - Multipliers
-- Target prices
+- Alert prices
 
 ## 🎨 UI Components
 
@@ -472,7 +499,7 @@ Update UI with status
 ```
 User adds stock
     ↓
-Enter: symbol, name, region, target price, ATR params
+Enter: symbol, name, region, alert price, ATR params
     ↓
 Validate inputs
     ↓
