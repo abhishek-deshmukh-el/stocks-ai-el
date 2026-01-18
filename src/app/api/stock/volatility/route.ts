@@ -177,7 +177,7 @@ export async function POST(request: Request) {
             stocks.find((s: any) => s.symbol === stock.symbol)?.region || Region.US;
 
           // Send WhatsApp notification
-          const simpleMessage = `🚨 SELL Alert\n\nSymbol: ${stock.symbol}\nCurrent Price: ${formatPrice(stock.currentPrice, stock.symbol)}\nVolatility Stop: ${formatPrice(stock.volatilityStop.stopLoss, stock.symbol)}\nDistance: ${stock.volatilityStop.stopLossPercentage.toFixed(1)}%\n\nRecommendation: SELL`;
+          const simpleMessage = `🚨 SELL Alert\n\nSymbol: ${stock.symbol}\nCurrent Price: ${formatPrice(stock.currentPrice, stock.symbol, stockRegion)}\nVolatility Stop: ${formatPrice(stock.volatilityStop.stopLoss, stock.symbol, stockRegion)}\nDistance: ${stock.volatilityStop.stopLossPercentage.toFixed(1)}%\n\nRecommendation: SELL`;
 
           await sendWhatsApp({ to: phoneNumber, message: simpleMessage });
           alertsSent++;

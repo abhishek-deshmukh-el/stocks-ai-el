@@ -123,8 +123,13 @@ export interface BatchJobStatus {
 /**
  * Format price with appropriate currency symbol based on stock region
  */
-export function formatPrice(price: number, symbol: string): string {
-  // Check if it's an Indian stock (ends with .NS or .BSE)
+export function formatPrice(price: number, symbol: string, region?: Region): string {
+  // If region is explicitly provided, use it
+  if (region !== undefined) {
+    return region === Region.INDIA ? `₹${price.toFixed(2)}` : `$${price.toFixed(2)}`;
+  }
+
+  // Otherwise, check if it's an Indian stock (ends with .NS or .BSE)
   const isIndianStock = symbol.endsWith(".NS") || symbol.endsWith(".BSE") || symbol.endsWith(".BO");
 
   if (isIndianStock) {
@@ -137,7 +142,12 @@ export function formatPrice(price: number, symbol: string): string {
 /**
  * Get currency symbol based on stock region
  */
-export function getCurrencySymbol(symbol: string): string {
+export function getCurrencySymbol(symbol: string, region?: Region): string {
+  // If region is explicitly provided, use it
+  if (region !== undefined) {
+    return region === Region.INDIA ? "₹" : "$";
+  }
+
   const isIndianStock = symbol.endsWith(".NS") || symbol.endsWith(".BSE") || symbol.endsWith(".BO");
   return isIndianStock ? "₹" : "$";
 }

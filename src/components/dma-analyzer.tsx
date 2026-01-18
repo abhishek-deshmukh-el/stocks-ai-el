@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { formatPrice } from "@/lib/constants";
+import { formatPrice, Region } from "@/lib/constants";
 import {
   DMAAnalysisAkshat,
   getSignalDescriptionAkshat,
@@ -21,6 +21,7 @@ import {
 
 export default function DMAAnalyzer() {
   const [symbol, setSymbol] = useState("AAPL");
+  const [region, setRegion] = useState<Region>(Region.US);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<DMAAnalysisAkshat | null>(null);
   const [stockSymbol, setStockSymbol] = useState<string>("");
@@ -32,7 +33,7 @@ export default function DMAAnalyzer() {
     setData(null);
 
     try {
-      const response = await fetch(`/api/stock/dma/batch?symbols=${symbol}`);
+      const response = await fetch(`/api/stock/dma/batch?symbols=${symbol}&region=${region}`);
       const result = await response.json();
 
       if (!response.ok) {
@@ -76,7 +77,7 @@ export default function DMAAnalyzer() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-3 sm:gap-4 mb-3 sm:mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
             <div>
               <Label htmlFor="symbol" className="text-sm">
                 Stock Symbol
@@ -93,6 +94,20 @@ export default function DMAAnalyzer() {
                   }
                 }}
               />
+            </div>
+            <div>
+              <Label htmlFor="region" className="text-sm">
+                Region
+              </Label>
+              <select
+                id="region"
+                value={region}
+                onChange={(e) => setRegion(e.target.value as Region)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value={Region.US}>US</option>
+                <option value={Region.INDIA}>India</option>
+              </select>
             </div>
           </div>
 
@@ -126,13 +141,13 @@ export default function DMAAnalyzer() {
                     Current Price
                   </div>
                   <div className="text-xl sm:text-2xl font-bold">
-                    {formatPrice(data.currentPrice, stockSymbol)}
+                    {formatPrice(data.currentPrice, stockSymbol, region)}
                   </div>
                 </div>
                 <div className="p-3 sm:p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                   <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">50 DMA</div>
                   <div className="text-xl sm:text-2xl font-bold">
-                    {formatPrice(data.dma50, stockSymbol)}
+                    {formatPrice(data.dma50, stockSymbol, region)}
                   </div>
                   <div className="text-[10px] sm:text-xs text-gray-500 mt-1">
                     {data.distanceFrom50DMAPercent > 0 ? "+" : ""}
@@ -142,7 +157,7 @@ export default function DMAAnalyzer() {
                 <div className="p-3 sm:p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                   <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">150 DMA</div>
                   <div className="text-xl sm:text-2xl font-bold">
-                    {formatPrice(data.dma150, stockSymbol)}
+                    {formatPrice(data.dma150, stockSymbol, region)}
                   </div>
                   <div className="text-[10px] sm:text-xs text-gray-500 mt-1">
                     {data.distanceFrom150DMAPercent > 0 ? "+" : ""}
@@ -152,7 +167,7 @@ export default function DMAAnalyzer() {
                 <div className="p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">200 DMA</div>
                   <div className="text-xl sm:text-2xl font-bold">
-                    {formatPrice(data.dma200, stockSymbol)}
+                    {formatPrice(data.dma200, stockSymbol, region)}
                   </div>
                   <div className="text-[10px] sm:text-xs text-gray-500 mt-1">
                     {data.distanceFrom200DMAPercent > 0 ? "+" : ""}

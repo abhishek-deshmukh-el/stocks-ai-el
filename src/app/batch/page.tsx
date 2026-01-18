@@ -136,9 +136,21 @@ export default function BatchJobPage() {
               });
             }
           });
+        } else {
+          toast({
+            title: "Failed to Fetch Prices",
+            description: data.error || "Unable to fetch stock prices",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error("Failed to fetch batch prices:", error);
+        toast({
+          title: "Price Fetch Error",
+          description:
+            error instanceof Error ? error.message : "Network error while fetching prices",
+          variant: "destructive",
+        });
       }
 
       setStockPrices(newPrices);
@@ -181,9 +193,23 @@ export default function BatchJobPage() {
                 newRecommendations.set(result.symbol, result.recommendations[0]);
               }
             });
+          } else {
+            toast({
+              title: "Failed to Fetch Recommendations",
+              description: data.error || "Unable to fetch analyst recommendations",
+              variant: "destructive",
+            });
           }
         } catch (error) {
           console.error("Failed to fetch batch recommendations:", error);
+          toast({
+            title: "Recommendations Fetch Error",
+            description:
+              error instanceof Error
+                ? error.message
+                : "Network error while fetching recommendations",
+            variant: "destructive",
+          });
         }
       }
 

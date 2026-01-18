@@ -241,11 +241,15 @@ export function StockTable({
                   <TableCell className="text-right">
                     {stockPrices.has(stock.symbol) ? (
                       <span className="font-semibold">
-                        {formatPrice(stockPrices.get(stock.symbol)!.price, stock.symbol)}
+                        {formatPrice(
+                          stockPrices.get(stock.symbol)!.price,
+                          stock.symbol,
+                          stock.region
+                        )}
                       </span>
                     ) : vData ? (
                       <span className="font-semibold">
-                        {formatPrice(vData.currentPrice, stock.symbol)}
+                        {formatPrice(vData.currentPrice, stock.symbol, stock.region)}
                       </span>
                     ) : (
                       <span className="text-xs text-muted-foreground">Loading...</span>
@@ -266,19 +270,19 @@ export function StockTable({
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">50 DMA:</span>
                                 <span className="font-semibold">
-                                  {formatPrice(dma.dma50, stock.symbol)}
+                                  {formatPrice(dma.dma50, stock.symbol, stock.region)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">150 DMA:</span>
                                 <span className="font-semibold">
-                                  {formatPrice(dma.dma150, stock.symbol)}
+                                  {formatPrice(dma.dma150, stock.symbol, stock.region)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-muted-foreground">200 DMA:</span>
                                 <span className="font-semibold">
-                                  {formatPrice(dma.dma200, stock.symbol)}
+                                  {formatPrice(dma.dma200, stock.symbol, stock.region)}
                                 </span>
                               </div>
                             </div>
@@ -348,7 +352,7 @@ export function StockTable({
                   <TableCell className="text-right">
                     {vData ? (
                       <span className="text-red-600 font-semibold">
-                        {formatPrice(vData.volatilityStop.stopLoss, stock.symbol)}
+                        {formatPrice(vData.volatilityStop.stopLoss, stock.symbol, stock.region)}
                       </span>
                     ) : (
                       <span className="text-muted-foreground text-center block">—</span>

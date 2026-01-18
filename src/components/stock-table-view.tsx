@@ -318,7 +318,11 @@ export function StockTableView({
                       <div className="text-xs text-muted-foreground">Current Price</div>
                       <div className="font-semibold">
                         {stockPrices.has(stock.symbol)
-                          ? formatPrice(stockPrices.get(stock.symbol)!.price, stock.symbol)
+                          ? formatPrice(
+                              stockPrices.get(stock.symbol)!.price,
+                              stock.symbol,
+                              stock.region
+                            )
                           : fetchingPrices
                             ? "Loading..."
                             : "-"}
@@ -327,7 +331,9 @@ export function StockTableView({
                     <div>
                       <div className="text-xs text-muted-foreground">Alert Price</div>
                       <div className="font-semibold">
-                        {stock.alertPrice ? formatPrice(stock.alertPrice, stock.symbol) : "-"}
+                        {stock.alertPrice
+                          ? formatPrice(stock.alertPrice, stock.symbol, stock.region)
+                          : "-"}
                       </div>
                     </div>
                     <div>
@@ -554,7 +560,11 @@ export function StockTableView({
                       {stockPrices.has(stock.symbol) ? (
                         <div className="text-sm">
                           <div className="font-semibold">
-                            {formatPrice(stockPrices.get(stock.symbol)!.price, stock.symbol)}
+                            {formatPrice(
+                              stockPrices.get(stock.symbol)!.price,
+                              stock.symbol,
+                              stock.region
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -605,7 +615,9 @@ export function StockTableView({
                       </div>
                     </TableCell>
                     <TableCell>
-                      {stock.alertPrice ? formatPrice(stock.alertPrice, stock.symbol) : "-"}
+                      {stock.alertPrice
+                        ? formatPrice(stock.alertPrice, stock.symbol, stock.region)
+                        : "-"}
                     </TableCell>
                     <TableCell>{stock.atrPeriod || 14}</TableCell>
                     <TableCell>{(stock.atrMultiplier || 2.0).toFixed(1)}</TableCell>
@@ -668,7 +680,11 @@ export function StockTableView({
                       {stockPrices.has(stock.symbol) ? (
                         <div className="text-sm">
                           <div className="font-semibold">
-                            {formatPrice(stockPrices.get(stock.symbol)!.price, stock.symbol)}
+                            {formatPrice(
+                              stockPrices.get(stock.symbol)!.price,
+                              stock.symbol,
+                              stock.region
+                            )}
                           </div>
                         </div>
                       ) : fetchingPrices ? (
